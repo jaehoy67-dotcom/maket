@@ -201,17 +201,25 @@
         }, 4000);
     }
 
-    function sendFinalOrder() {
-        if (!conn || !conn.open) {
-            alert("주방 연결 확인 중입니다...");
-            connectToKitchen();
-            setTimeout(() => { if(conn && conn.open) sendFinalOrder(); else alert("연결이 불안정합니다. 다시 시도해 주세요."); }, 2000);
-            return;
-        }
-       conn.send({ customer: customerName, recipe: currentRecipe.map(i => i.name), fullRecipe: currentRecipe });
-        alert("💳 결제 완료! 주문이 주방으로 전달되었습니다.");
-        location.reload();
+// index.html의 sendFinalOrder 함수 내부를 아래처럼 교체하세요.
+function sendFinalOrder() {
+    if (!conn || !conn.open) {
+        alert("주방 연결을 확인해 주세요.");
+        connectToKitchen();
+        return;
     }
+
+    // [중요] 주방에서 그림을 그릴 수 있게 'fullRecipe' 데이터를 함께 보냅니다.
+    const orderData = {
+        customer: customerName,
+        recipe: currentRecipe.map(i => i.name),
+        fullRecipe: currentRecipe // 이미지 파일명(file) 정보가 담긴 전체 리스트
+    };
+
+    conn.send(orderData);
+    alert("💳 결제 완료! 주문이 주방으로 전달되었습니다.");
+    location.reload();
+}
 </script>
 </body>
 </html>
