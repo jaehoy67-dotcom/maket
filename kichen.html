@@ -2,101 +2,91 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>진영 유치원 주방 시스템</title>
+    <title>진영 유치원 주방 주문 시스템</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         body { background: #333; color: white; font-family: 'Nanum Gothic', sans-serif; padding: 20px; margin: 0; }
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #555; padding-bottom: 10px; margin-bottom: 20px; }
-        #status-indicator { padding: 8px 20px; border-radius: 20px; font-weight: bold; font-size: 1em; }
-        .status-off { background: #E74C3C; }
-        .status-on { background: #27AE60; }
+        header { border-bottom: 2px solid #555; padding-bottom: 10px; margin-bottom: 20px; text-align: center; }
         
-        /* 실시간 로그 메시지 */
-        #debug-console { background: #222; color: #0f0; padding: 10px; font-size: 0.8em; border-radius: 10px; margin-bottom: 20px; max-height: 100px; overflow-y: auto; font-family: monospace; }
+        .order-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
+        
+        /* 주문 카드 레이아웃 */
+        .order-card { background: white; color: #333; padding: 20px; border-radius: 25px; display: flex; flex-direction: row; gap: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); min-height: 350px; }
+        
+        /* 왼쪽: 음식 그림 영역 */
+        .food-preview { position: relative; width: 180px; height: 300px; background: #f9f9f9; border-radius: 15px; border: 2px dashed #ccc; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px; overflow: hidden; }
+        .preview-img { position: absolute; width: 140px; transition: all 0.3s; }
 
-        .order-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .order-card { background: white; color: #333; padding: 20px; border-radius: 20px; border-left: 10px solid #F39C12; box-shadow: 0 10px 20px rgba(0,0,0,0.3); animation: slideUp 0.5s ease-out; }
-        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
-        .recipe-list { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
-        .step { background: #F8F9FA; padding: 10px; border-radius: 10px; font-weight: bold; border: 1px solid #DDD; display: flex; align-items: center; }
-        .step-num { color: #F39C12; margin-right: 10px; }
-        
-        .done-btn { background: #27AE60; color: white; border: none; padding: 15px; border-radius: 10px; margin-top: 20px; width: 100%; font-size: 1.1em; font-weight: bold; cursor: pointer; }
+        /* 오른쪽: 주문 정보 영역 */
+        .order-info { flex: 1; display: flex; flex-direction: column; }
+        .recipe-list { margin-top: 10px; font-size: 0.9em; overflow-y: auto; max-height: 200px; }
+        .step { background: #eee; padding: 5px 10px; border-radius: 8px; margin-bottom: 5px; font-weight: bold; }
+
+        .done-btn { background: #27AE60; color: white; border: none; padding: 15px; border-radius: 15px; margin-top: auto; font-size: 1.1em; font-weight: bold; cursor: pointer; }
         #audio-btn { position: fixed; bottom: 20px; right: 20px; background: #F39C12; padding: 15px; border-radius: 10px; cursor: pointer; z-index: 1000; font-weight: bold; }
     </style>
 </head>
 <body>
     <header>
-        <h1>👨‍🍳 주방 주문 모니터</h1>
-        <div id="status-indicator" class="status-off">시스템 연결 중...</div>
+        <h1>👨‍🍳 실시간 요리 주문서</h1>
     </header>
 
-    <div id="debug-console">시스템 로그: 연결을 기다리고 있습니다...</div>
+    <div id="audio-btn" onclick="this.style.display='none'">🔔 소리 켜기 (클릭 필수)</div>
 
-    <div id="audio-btn" onclick="this.style.display='none'">🔔 주문 소리 켜기 (클릭 필수)</div>
-
-    <div id="order-list" class="order-grid"></div>
+    <div id="order-list" class="order-grid">
+        </div>
 
 <script>
     const KITCHEN_ID = 'jinyeong-burger-kitchen-2026';
     const peer = new Peer(KITCHEN_ID);
     const orderList = document.getElementById('order-list');
-    const statusDiv = document.getElementById('status-indicator');
-    const debugConsole = document.getElementById('debug-console');
 
-    function log(msg) {
-        const time = new Date().toLocaleTimeString();
-        debugConsole.innerHTML += `<div>[${time}] ${msg}</div>`;
-        debugConsole.scrollTop = debugConsole.scrollHeight;
-    }
-
-    peer.on('open', (id) => {
-        log("주방 시스템 가동 완료! ID: " + id);
-        statusDiv.innerText = "✅ 주문 받기 대기 중";
-        statusDiv.className = "status-on";
-    });
-
-    peer.on('error', (err) => {
-        log("오류 발생: " + err.type);
-        if(err.type === 'unavailable-id') {
-            alert('주방 화면이 이미 열려있습니다. 창을 하나만 남겨주세요!');
-        }
-    });
+    peer.on('open', (id) => console.log('주방 시스템 준비 완료!'));
 
     peer.on('connection', (conn) => {
-        log("주문용 태블릿과 연결되었습니다!");
-        
         conn.on('data', (data) => {
-            log("데이터 수신: " + data.customer + "님의 주문!");
+            console.log('주문 도착:', data);
             
-            // 만약 data.recipe가 문자열로 오거나 배열이 아닐 경우를 대비해 예외처리
-            const recipes = Array.isArray(data.recipe) ? data.recipe : ["주문 정보 오류"];
-
             const card = document.createElement('div');
             card.className = 'order-card';
+
+            // 이미지 쌓기 로직 (그림 생성)
+            let imageStackHtml = '';
+            if (data.fullRecipe && Array.isArray(data.fullRecipe)) {
+                data.fullRecipe.forEach((item, index) => {
+                    // 재료 종류(burger/skewer/drink)에 따라 높이 조절
+                    let bottomPos = index * 20; 
+                    if(item.tab === 'skewer') bottomPos = 50 + (index * 30);
+                    
+                    imageStackHtml += `
+                        <img src="${item.file}.png" class="preview-img" 
+                             style="bottom: ${bottomPos}px; z-index: ${index + 10};">
+                    `;
+                });
+            }
+
             card.innerHTML = `
-                <h2 style="margin:0;">🎈 ${data.customer || '손님'}</h2>
-                <div class="recipe-list">
-                    ${recipes.map((r, i) => `
-                        <div class="step">
-                            <span class="step-num">${i+1}</span>
-                            <span>${r}</span>
-                        </div>
-                    `).join('')}
+                <div class="food-preview">
+                    ${imageStackHtml || '<p style="color:#ccc; margin-top:120px;">그림 없음</p>'}
                 </div>
-                <button class="done-btn" onclick="this.parentElement.remove()">✅ 조리 완료</button>
+                <div class="order-info">
+                    <h2 style="margin:0; color:#F39C12;">🎈 ${data.customer} 친구</h2>
+                    <div class="recipe-list">
+                        ${data.recipe.map((r, i) => `<div class="step">${i+1}. ${r}</div>`).join('')}
+                    </div>
+                    <button class="done-btn" onclick="this.parentElement.parentElement.remove()">✅ 요리 완료!</button>
+                </div>
             `;
             
             orderList.insertBefore(card, orderList.firstChild);
-            
-            // 벨소리
-            try {
-                const audio = new Audio('https://t1.daumcdn.net/cfile/tistory/99412B355A38B17305?original');
-                audio.play();
-            } catch(e) { log("소리 재생 실패 (화면을 클릭해주세요)"); }
+            playAlert();
         });
     });
+
+    function playAlert() {
+        const audio = new Audio('https://t1.daumcdn.net/cfile/tistory/99412B355A38B17305?original');
+        audio.play().catch(e => console.log("소리 재생 대기"));
+    }
 </script>
 </body>
 </html>

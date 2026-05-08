@@ -208,7 +208,7 @@
             setTimeout(() => { if(conn && conn.open) sendFinalOrder(); else alert("연결이 불안정합니다. 다시 시도해 주세요."); }, 2000);
             return;
         }
-        conn.send({ customer: customerName, recipe: currentRecipe.map(i => i.name) });
+       conn.send({ customer: customerName, recipe: currentRecipe.map(i => i.name), fullRecipe: currentRecipe });
         alert("💳 결제 완료! 주문이 주방으로 전달되었습니다.");
         location.reload();
     }
