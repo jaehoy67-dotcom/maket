@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>진영 유치원 주방 모니터</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        body { background: #333; color: white; font-family: 'Nanum Gothic', sans-serif; padding: 20px; }
+        .order-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 20px; }
+        .order-card { background: white; color: #333; padding: 20px; border-radius: 25px; display: flex; gap: 20px; min-height: 400px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .food-preview { position: relative; width: 170px; height: 360px; background: #eee; border-radius: 15px; border: 2px dashed #ccc; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px; overflow: hidden; }
+        .preview-img { position: absolute; width: 140px; }
+        .order-info { flex: 1; display: flex; flex-direction: column; }
+        .step { background: #f0f0f0; padding: 8px; border-radius: 8px; margin-bottom: 5px; font-weight: bold; border: 1px solid #ddd; }
+        .done-btn { background: #27AE60; color: white; border: none; padding: 15px; border-radius: 15px; margin-top: auto; font-size: 1.1em; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1 style="text-align:center; color:#F39C12;">👨‍🍳 실시간 요리 주문서</h1>
+    <div id="order-list" class="order-grid"></div>
+
+<script>
+    // 주방에서도 메뉴 정보를 대조할 수 있도록 메뉴 리스트 포함
+    const menus = {
+        burger: [
+            { id: 'bun_bottom', name: '아래빵', icon: '🍞' },
+            { id: 'patty', name: '패티', icon: '🍖' },
+            { id: 'lettuce', name: '양상추', icon: '🥬' },
+            { id: 'cheese', name: '치즈', icon: '🧀' },
+            { id: 'tomato', name: '토마토', icon: '🍅' },
+            { id: 'bun_top', name: '위빵', icon: '🍞' }
+        ],
+        skewer: [
+            { id: 'steak', name: '스테이크', icon: '🥩' },
+            { id: 'shrimp', name: '새우', icon: '🍤' },
+            { id: 'tomato', name: '방울토마토', icon: '🍅' },
+            { id: 'pepper', name: '피망', icon: '🫑' }
+        ],
+        drink: [
+            { id: 'cola', name: '콜라', icon: '🥤' },
+            { id: 'cider', name: '사이다', icon: '🫧' },
+            { id: 'juice', name: '주스', icon: '🧃' }
+        ]
+    };
+
+    const peer = new Peer('jinyeong-burger-kitchen-2026');
+
+    peer.on('connection', (conn) => {
+        conn.on('data', (data) => {
+            console.log("주문 수신:", data); // 확인용 로그
+            
+            const card = document.createElement('div');
+            card.className = 'order-card';
+
+            let imgHtml = '';
+            let listHtml = '';
+
+            // 'fullRecipe'라는 이름으로 들어온 상자를 열어 하나씩 처리
+            if (data.fullRecipe && Array.isArray(data.fullRecipe)) {
+                data.fullRecipe.forEach((item, idx) => {
+                    // 메뉴 데이터에서 이름과 아이콘 찾기
+                    const menuInfo = menus[item.tab].find(m => m.id === item.file);
+                    const displayName = menuInfo ? `${menuInfo.icon} ${menuInfo.name}` : "재료";
+
+                    // 그림 쌓기 로직
+                    let offset = idx * 25;
+                    if(item.tab === 'skewer') offset = 40 + (idx * 40);
+                    imgHtml += `<img src="${item.file}.png" class="preview-img" style="bottom:${offset}px; z-index:${idx+10};">`;
+                    
+                    // 글자 리스트 만들기
+                    listHtml += `<div class="step">${idx + 1}. ${displayName}</div>`;
+                });
+            }
+
+            card.innerHTML = `
+                <div class="food-preview">${imgHtml || '<p style="color:#ccc; margin-top:140px;">그림 데이터 없음</p>'}</div>
+                <div class="order-info">
+                    <h2 style="margin:0 0 10px 0;">🎈 ${data.customer} 친구</h2>
+                    <div style="flex-grow:1; overflow-y:auto;">${listHtml}</div>
+                    <button class="done-btn" onclick="this.closest('.order-card').remove()">✅ 요리 완료</button>
+                </div>
+            `;
+            document.getElementById('order-list').insertBefore(card, document.getElementById('order-list').firstChild);
+            
+            // 알림음
+            new Audio('https://t1.daumcdn.net/cfile/tistory/99412B355A38B17305?original').play().catch(()=>{});
+        });
+    });
+</script>
+</body>
+</html>

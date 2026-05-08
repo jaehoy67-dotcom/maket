@@ -203,16 +203,16 @@
     }
 
 function sendFinalOrder() {
+    // 1. 연결 확인
     if (!conn || !conn.open) {
         alert("주방과 연결이 끊겼습니다. 다시 시도해 주세요.");
         connectToKitchen();
         return;
     }
 
-    // 주방으로 보낼 '그림 정보'가 담긴 데이터 보따리
+    // 2. 주방으로 보낼 데이터 (이름, 이미지파일명, 탭 정보를 'fullRecipe'라는 이름으로 묶음)
     const orderData = {
         customer: customerName,
-        // 각 재료의 파일명과 종류(tab)를 상세히 담아 보냅니다.
         fullRecipe: currentRecipe.map(item => ({
             name: item.name,
             file: item.file,
@@ -221,8 +221,9 @@ function sendFinalOrder() {
     };
 
     try {
+        // 3. 데이터 전송
         conn.send(orderData);
-        alert("💳 결제가 완료되었습니다! 주방으로 주문을 전달했어요.");
+        alert("💳 결제 완료! 주방으로 주문을 보냈습니다.");
         location.reload();
     } catch (e) {
         alert("전송 중 오류가 발생했습니다.");
