@@ -2,35 +2,25 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>진영 유치원 주방 주문 시스템</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         body { background: #333; color: white; font-family: 'Nanum Gothic', sans-serif; padding: 20px; margin: 0; }
-        header { border-bottom: 2px solid #555; padding-bottom: 10px; margin-bottom: 20px; text-align: center; }
-        .order-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
-        .order-card { background: white; color: #333; padding: 20px; border-radius: 25px; display: flex; flex-direction: row; gap: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); min-height: 400px; }
-        
-        /* 왼쪽: 음식 그림 영역 */
-        .food-preview { position: relative; width: 180px; height: 360px; background: #f0f0f0; border-radius: 15px; border: 2px dashed #ccc; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px; overflow: hidden; }
-        .preview-img { position: absolute; width: 140px; transition: all 0.3s; }
-
-        /* 오른쪽: 주문 정보 영역 */
+        .order-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; margin-top: 20px; }
+        .order-card { background: white; color: #333; padding: 20px; border-radius: 25px; display: flex; gap: 20px; min-height: 380px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .food-preview { position: relative; width: 160px; height: 340px; background: #eee; border-radius: 15px; border: 2px dashed #ccc; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px; overflow: hidden; }
+        .preview-img { position: absolute; width: 130px; }
         .order-info { flex: 1; display: flex; flex-direction: column; }
-        .recipe-list { margin-top: 10px; font-size: 0.95em; overflow-y: auto; max-height: 250px; }
-        .step { background: #eee; padding: 8px 12px; border-radius: 8px; margin-bottom: 5px; font-weight: bold; border: 1px solid #ddd; }
-
+        .step { background: #f0f0f0; padding: 8px; border-radius: 8px; margin-bottom: 5px; font-weight: bold; border: 1px solid #ddd; font-size: 0.9em; }
         .done-btn { background: #27AE60; color: white; border: none; padding: 15px; border-radius: 15px; margin-top: auto; font-size: 1.1em; font-weight: bold; cursor: pointer; }
-        #audio-btn { position: fixed; bottom: 20px; right: 20px; background: #F39C12; padding: 15px; border-radius: 10px; cursor: pointer; z-index: 1000; font-weight: bold; }
     </style>
 </head>
 <body>
-    <header><h1>👨‍🍳 실시간 요리 주문서🔔</h1></header>
-    <div id="audio-btn" onclick="this.style.display='none'">🔔 소리 켜기 (클릭 필수)</div>
+    <h1 style="text-align:center; color:#F39C12;">👨‍🍳 진영 자동차 마을 주문 모니터</h1>
     <div id="order-list" class="order-grid"></div>
 
 <script>
-    // 선생님이 말씀하신 음식 데이터 코드 추가
+    // 선생님이 말씀하신 음식 데이터 코드
     const menus = {
         burger: [
             { id: 'bun_bottom', name: '아래빵', icon: '🍞' },
@@ -53,52 +43,46 @@
         ]
     };
 
-    const KITCHEN_ID = 'jinyeong-burger-kitchen-2026';
-    const peer = new Peer(KITCHEN_ID);
-    const orderList = document.getElementById('order-list');
-
-    peer.on('open', () => console.log('주방 준비 완료!'));
+    const peer = new Peer('jinyeong-burger-kitchen-2026');
 
     peer.on('connection', (conn) => {
         conn.on('data', (data) => {
-            console.log('주문 도착:', data);
+            console.log("주문 데이터 도착:", data);
             
             const card = document.createElement('div');
             card.className = 'order-card';
 
-            let imageStackHtml = '';
-            let textListHtml = '';
+            let imgHtml = '';
+            let listHtml = '';
 
-            // 전달받은 데이터를 메뉴판(menus)과 대조하여 처리
             if (data.fullRecipe && Array.isArray(data.fullRecipe)) {
-                data.fullRecipe.forEach((item, index) => {
-                    // 1. 메뉴 데이터에서 해당 아이템 찾기
-                    const category = item.tab; 
-                    const menuInfo = menus[category].find(m => m.id === item.file);
-                    const displayName = menuInfo ? `${menuInfo.icon} ${menuInfo.name}` : item.name;
+                data.fullRecipe.forEach((item, idx) => {
+                    // 데이터 대조 후 이름 찾기
+                    const info = menus[item.tab].find(m => m.id === item.file);
+                    const name = info ? `${info.icon} ${info.name}` : "재료";
 
-                    // 2. 그림 생성
-                    let bottomOffset = index * 25; 
-                    if (item.tab === 'skewer') bottomOffset = 50 + (index * 40);
-                    imageStackHtml += `<img src="${item.file}.png" class="preview-img" style="bottom:${bottomOffset}px; z-index:${index+10};">`;
+                    // 그림 쌓기
+                    let offset = idx * 25;
+                    if(item.tab === 'skewer') offset = 40 + (idx * 40);
+                    imgHtml += `<img src="${item.file}.png" class="preview-img" style="bottom:${offset}px; z-index:${idx+10};">`;
                     
-                    // 3. 텍스트 리스트 생성
-                    textListHtml += `<div class="step">${index + 1}. ${displayName}</div>`;
+                    // 글자 리스트
+                    listHtml += `<div class="step">${idx+1}. ${name}</div>`;
                 });
             }
 
             card.innerHTML = `
-                <div class="food-preview">${imageStackHtml || '<p style="color:#ccc; margin-top:140px;">그림 데이터 없음</p>'}</div>
+                <div class="food-preview">${imgHtml}</div>
                 <div class="order-info">
-                    <h2 style="margin:0 0 10px 0; color:#F39C12;">🎈 ${data.customer || '친구'}의 주문</h2>
-                    <div class="recipe-list">${textListHtml}</div>
-                    <button class="done-btn" onclick="this.closest('.order-card').remove()">✅ 요리 완료!</button>
+                    <h2 style="margin:0 0 10px 0;">🎈 ${data.customer}</h2>
+                    <div style="flex-grow:1; overflow-y:auto;">${listHtml}</div>
+                    <button class="done-btn" onclick="this.closest('.order-card').remove()">✅ 요리 완료</button>
                 </div>
             `;
-            orderList.insertBefore(card, orderList.firstChild);
+            document.getElementById('order-list').insertBefore(card, document.getElementById('order-list').firstChild);
             
-            // 벨소리
-            new Audio('https://t1.daumcdn.net/cfile/tistory/99412B355A38B17305?original').play().catch(() => {});
+            // 알림음
+            new Audio('https://t1.daumcdn.net/cfile/tistory/99412B355A38B17305?original').play().catch(()=>{});
         });
     });
 </script>

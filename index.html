@@ -209,20 +209,31 @@ function sendFinalOrder() {
         return;
     }
 
-    // [중요] 주방에서 그림을 그릴 수 있도록 이미지 정보를 포함한 전체 레시피를 보냅니다.
+// index.html의 sendFinalOrder 함수를 이 코드로 교체하세요.
+function sendFinalOrder() {
+    if (!conn || !conn.open) {
+        alert("주방과 연결이 끊겼습니다. 다시 시도해 주세요.");
+        connectToKitchen();
+        return;
+    }
+
+    // 주방으로 보낼 데이터 보따리
     const orderData = {
         customer: customerName,
-        // 주방 모니터에 그림을 그리기 위한 핵심 데이터
+        // 주방에서 그림 그릴 때 필요한 핵심 정보만 쏙쏙 뽑아서 보냅니다.
         fullRecipe: currentRecipe.map(item => ({
-            name: item.name,
-            file: item.file,
-            tab: item.tab
+            file: item.file, // 예: 'patty'
+            tab: item.tab    // 예: 'burger'
         }))
     };
 
-    conn.send(orderData);
-    alert("💳 결제 완료! 주문이 주방으로 전송되었습니다.");
-    location.reload();
+    try {
+        conn.send(orderData);
+        alert("💳 결제 완료! 주방으로 주문을 전달했습니다.");
+        location.reload();
+    } catch (e) {
+        alert("전송 중 오류가 발생했습니다. 다시 시도해 주세요.");
+    }
 }
 </script>
 </body>
