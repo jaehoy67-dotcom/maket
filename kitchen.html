@@ -1,102 +1,175 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>진영 유치원 주방 주문 시스템</title>
 
-    <title>진영 유치원 주방 주문 시스템</title>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<style>
 
-    <style>
+body{
+    margin:0;
+    padding:20px;
+    background:#2C3E50;
+    font-family:'Nanum Gothic', sans-serif;
+    overflow-x:hidden;
+}
 
-        body {
-            background: #333;
-            color: white;
-            font-family: 'Nanum Gothic', sans-serif;
-            padding: 20px;
-            margin: 0;
-        }
+h1{
+    text-align:center;
+    color:#F39C12;
+    margin-bottom:25px;
+    font-size:2.3rem;
+}
 
-        .order-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(420px,1fr));
-            gap: 20px;
-        }
+.order-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(700px,1fr));
+    gap:25px;
+}
 
-        .order-card {
-            background: white;
-            color: #333;
-            padding: 20px;
-            border-radius: 25px;
-            display: flex;
-            gap: 20px;
-            min-height: 380px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-        }
+.order-card{
+    background:white;
+    border-radius:30px;
+    padding:25px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.4);
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+}
 
-        .food-preview {
-            position: relative;
-            width: 160px;
-            height: 340px;
-            background: #eee;
-            border-radius: 15px;
-            border: 2px dashed #ccc;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            padding-bottom: 20px;
-            overflow: hidden;
-        }
+.top-section{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
 
-        .preview-img {
-            position: absolute;
-            width: 130px;
-            transition: all 0.3s;
-        }
+.customer-name{
+    font-size:2rem;
+    font-weight:bold;
+    color:#E67E22;
+}
 
-        .order-info {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
+.order-time{
+    font-size:1rem;
+    color:#888;
+}
 
-        .step {
-            background: #f0f0f0;
-            padding: 8px;
-            border-radius: 8px;
-            margin-bottom: 5px;
-            font-weight: bold;
-            border: 1px solid #ddd;
-        }
+.food-wrapper{
+    display:flex;
+    justify-content:center;
+    gap:20px;
+    flex-wrap:wrap;
+}
 
-        .done-btn {
-            background: #27AE60;
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 15px;
-            margin-top: auto;
-            font-size: 1.1em;
-            font-weight: bold;
-            cursor: pointer;
-        }
+.food-box{
+    width:180px;
+    height:320px;
+    background:#F7F7F7;
+    border-radius:20px;
+    border:3px dashed #DDD;
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    justify-content:center;
+    align-items:flex-end;
+    padding-bottom:20px;
+}
 
-    </style>
+.food-title{
+    position:absolute;
+    top:10px;
+    left:50%;
+    transform:translateX(-50%);
+    font-weight:bold;
+    font-size:1.1rem;
+}
+
+.preview-img{
+    position:absolute;
+    transition:all 0.3s;
+}
+
+.recipe-list{
+    background:#FAFAFA;
+    border-radius:15px;
+    padding:15px;
+}
+
+.step{
+    background:white;
+    border:1px solid #DDD;
+    border-radius:10px;
+    padding:10px;
+    margin-bottom:8px;
+    font-weight:bold;
+}
+
+.done-btn{
+    border:none;
+    background:#27AE60;
+    color:white;
+    padding:18px;
+    border-radius:18px;
+    font-size:1.2rem;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.done-btn:hover{
+    transform:scale(1.03);
+}
+
+.status-bar{
+    position:fixed;
+    top:10px;
+    right:10px;
+    background:white;
+    padding:10px 18px;
+    border-radius:15px;
+    font-weight:bold;
+    color:#27AE60;
+    z-index:999;
+    box-shadow:0 5px 15px rgba(0,0,0,0.2);
+}
+
+@media(max-width:900px){
+
+    .order-grid{
+        grid-template-columns:1fr;
+    }
+
+    .food-wrapper{
+        flex-direction:column;
+        align-items:center;
+    }
+
+}
+
+</style>
 </head>
 
 <body>
 
-<h1 style="text-align:center; color:#F39C12;">
-    👨‍🍳 실시간 요리 주문서 
-</h1>
+<div class="status-bar" id="statusBar">
+🟡 연결 준비중...
+</div>
 
-<div id="order-list" class="order-grid"></div>
+<h1>👨‍🍳 실시간 요리 주문서 👨‍🍳</h1>
+
+<div class="order-grid" id="order-list"></div>
 
 <script>
 
+const orderList = document.getElementById('order-list');
+const statusBar = document.getElementById('statusBar');
+
 const menus = {
 
-    burger: [
+    burger:[
         { id:'bun_bottom', name:'아래빵', icon:'🍞' },
         { id:'patty', name:'패티', icon:'🍖' },
         { id:'lettuce', name:'양상추', icon:'🥬' },
@@ -105,14 +178,14 @@ const menus = {
         { id:'bun_top', name:'위빵', icon:'🍞' }
     ],
 
-    skewer: [
+    skewer:[
         { id:'steak', name:'스테이크', icon:'🥩' },
         { id:'shrimp', name:'새우', icon:'🍤' },
         { id:'tomato', name:'방울토마토', icon:'🍅' },
         { id:'pepper', name:'피망', icon:'🫑' }
     ],
 
-    drink: [
+    drink:[
         { id:'cola', name:'콜라', icon:'🥤' },
         { id:'cider', name:'사이다', icon:'🫧' },
         { id:'juice', name:'주스', icon:'🧃' }
@@ -122,147 +195,231 @@ const menus = {
 const peer = new Peer(
     'jinyeong-burger-kitchen-2026',
     {
-        host: '0.peerjs.com',
-        secure: true,
-        port: 443,
-        debug: 2
+        host:'0.peerjs.com',
+        secure:true,
+        port:443,
+        debug:2
     }
 );
 
-peer.on('open', (id) => {
+peer.on('open',(id)=>{
 
-    console.log('주방 서버 준비 완료:', id);
+    console.log('주방 서버 시작:',id);
 
-    alert('주방 연결 준비 완료!');
+    statusBar.innerHTML = '🟢 연결 준비 완료';
 });
 
-peer.on('error', (err) => {
+peer.on('error',(err)=>{
 
     console.error(err);
 
-    alert('주방 오류 : ' + err.type);
+    statusBar.innerHTML = '🔴 연결 오류';
+
+    alert('연결 오류 : ' + err.type);
 });
 
-peer.on('connection', (conn) => {
+peer.on('connection',(conn)=>{
 
     console.log('주문기 연결됨');
 
-    conn.on('data', (data) => {
+    conn.on('data',(data)=>{
 
-        console.log('주문 도착!', data);
+        console.log('주문 도착!',data);
 
-        const card = document.createElement('div');
+        createOrderCard(data);
 
-        card.className = 'order-card';
+        playBell();
+    });
 
-        let imgHtml = '';
+});
 
-        let listHtml = '';
+function createOrderCard(data){
 
-        if(data.fullRecipe &&
-           Array.isArray(data.fullRecipe)) {
+    let burgerHtml = '';
+    let skewerHtml = '';
+    let drinkHtml = '';
 
-            let burgerIndex = 0;
-            let skewerIndex = 0;
-            let drinkIndex = 0;
+    let burgerIndex = 0;
+    let skewerIndex = 0;
+    let drinkIndex = 0;
 
-            data.fullRecipe.forEach((item, idx) => {
+    let listHtml = '';
 
-                const menuInfo =
-                    menus[item.tab]
-                    ?.find(m => m.id === item.file);
+    if(data.fullRecipe && Array.isArray(data.fullRecipe)){
 
-                const displayName =
-                    menuInfo
-                    ? `${menuInfo.icon} ${menuInfo.name}`
-                    : item.name;
+        data.fullRecipe.forEach((item,idx)=>{
 
-                let bottom = 0;
+            const menuInfo =
+                menus[item.tab]
+                ?.find(m=>m.id===item.file);
 
-                if(item.tab === 'burger') {
+            const displayName =
+                menuInfo
+                ? `${menuInfo.icon} ${menuInfo.name}`
+                : item.name;
 
-                    bottom = 20 + burgerIndex * 25;
+            listHtml += `
+                <div class="step">
+                    ${idx+1}. ${displayName}
+                </div>
+            `;
 
-                    burgerIndex++;
-                }
+            // 햄버거
+            if(item.tab === 'burger'){
 
-                else if(item.tab === 'skewer') {
-
-                    bottom = 20 + skewerIndex * 45;
-
-                    skewerIndex++;
-                }
-
-                else {
-
-                    bottom = 20 + drinkIndex * 55;
-
-                    drinkIndex++;
-                }
-
-                imgHtml += `
+                burgerHtml += `
                     <img
                         src="${item.file}.png"
                         class="preview-img"
                         style="
-                            bottom:${bottom}px;
-                            z-index:${idx + 10};
+                            width:140px;
+                            bottom:${20 + burgerIndex * 24}px;
+                            z-index:${burgerIndex + 10};
                         "
                     >
                 `;
 
-                listHtml += `
-                    <div class="step">
-                        ${idx + 1}. ${displayName}
-                    </div>
+                burgerIndex++;
+            }
+
+            // 꼬치
+            else if(item.tab === 'skewer'){
+
+                skewerHtml += `
+                    <img
+                        src="${item.file}.png"
+                        class="preview-img"
+                        style="
+                            width:100px;
+                            bottom:${20 + skewerIndex * 45}px;
+                            z-index:${skewerIndex + 10};
+                        "
+                    >
                 `;
-            });
-        }
 
-        card.innerHTML = `
+                skewerIndex++;
+            }
 
-            <div class="food-preview">
-                ${imgHtml}
+            // 음료
+            else if(item.tab === 'drink'){
+
+                drinkHtml += `
+                    <img
+                        src="${item.file}.png"
+                        class="preview-img"
+                        style="
+                            width:100px;
+                            bottom:${20 + drinkIndex * 55}px;
+                            z-index:${drinkIndex + 10};
+                        "
+                    >
+                `;
+
+                drinkIndex++;
+            }
+
+        });
+
+    }
+
+    const now = new Date();
+
+    const timeText =
+        now.getHours().toString().padStart(2,'0')
+        + ':'
+        + now.getMinutes().toString().padStart(2,'0');
+
+    const card = document.createElement('div');
+
+    card.className = 'order-card';
+
+    card.innerHTML = `
+
+        <div class="top-section">
+
+            <div class="customer-name">
+                🎈 ${data.customer} 친구
             </div>
 
-            <div class="order-info">
+            <div class="order-time">
+                ${timeText}
+            </div>
 
-                <h2 style="margin:0 0 10px 0;">
-                    🎈 ${data.customer} 친구
-                </h2>
+        </div>
 
-                <div style="flex-grow:1; overflow-y:auto;">
-                    ${listHtml}
+        <div class="food-wrapper">
+
+            <!-- 햄버거 -->
+            <div class="food-box">
+
+                <div class="food-title">
+                    🍔 햄버거
                 </div>
 
-                <button
-                    class="done-btn"
-                    onclick="this.closest('.order-card').remove()">
-
-                    ✅ 요리 완료
-
-                </button>
+                ${burgerHtml}
 
             </div>
-        `;
 
-        document.getElementById('order-list')
-        .insertBefore(
-            card,
-            document.getElementById('order-list').firstChild
+            <!-- 꼬치 -->
+            <div class="food-box">
+
+                <div class="food-title">
+                    🍢 꼬치
+                </div>
+
+                ${skewerHtml}
+
+            </div>
+
+            <!-- 음료 -->
+            <div class="food-box">
+
+                <div class="food-title">
+                    🥤 음료
+                </div>
+
+                ${drinkHtml}
+
+            </div>
+
+        </div>
+
+        <div class="recipe-list">
+            ${listHtml}
+        </div>
+
+        <button
+            class="done-btn"
+            onclick="this.closest('.order-card').remove()">
+
+            ✅ 요리 완료
+
+        </button>
+
+    `;
+
+    orderList.insertBefore(card, orderList.firstChild);
+}
+
+function playBell(){
+
+    try{
+
+        const audio = new Audio(
+            'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3'
         );
 
-        try {
+        audio.volume = 1;
 
-            new Audio(
-                'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'
-            ).play();
+        audio.play();
 
-        } catch(e) {
-            console.log('효과음 실패');
-        }
-    });
-});
+    }catch(e){
+
+        console.log('효과음 실패');
+
+    }
+
+}
 
 </script>
 
