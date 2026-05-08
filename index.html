@@ -6,6 +6,7 @@
     <title>진영 유치원 스마트 키오스크</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
+        /* 선생님이 만드신 기존 스타일 (그대로 유지) */
         body { font-family: 'Nanum Gothic', sans-serif; background: #FFFBE6; margin: 0; text-align: center; overflow: hidden; }
         #tab-bar { display: flex; background: #F39C12; padding: 10px; gap: 10px; justify-content: center; position: fixed; top: 0; width: 100%; z-index: 150; }
         .tab-btn { padding: 10px 20px; border: none; border-radius: 20px; background: rgba(255,255,255,0.3); color: white; font-weight: bold; font-size: 1.1em; cursor: pointer; }
@@ -201,40 +202,33 @@
         }, 4000);
     }
 
-// index.html 의 sendFinalOrder 함수 부분을 아래로 교체하세요.
-function sendFinalOrder() {
-    if (!conn || !conn.open) {
-        alert("주방 연결을 확인해 주세요.");
-        connectToKitchen();
-        return;
-    }
+    // [수정 완료] 최종 데이터 전송 함수
+    function sendFinalOrder() {
+        if (!conn || !conn.open) {
+            alert("주방과 연결이 끊겼습니다. 다시 시도해 주세요.");
+            connectToKitchen();
+            return;
+        }
 
-// index.html의 sendFinalOrder 함수를 이 코드로 교체하세요.
-function sendFinalOrder() {
-    if (!conn || !conn.open) {
-        alert("주방과 연결이 끊겼습니다. 다시 시도해 주세요.");
-        connectToKitchen();
-        return;
-    }
+        // 주방으로 보낼 데이터 (이름, 이미지파일명, 탭 정보 포함)
+        const orderData = {
+            customer: customerName,
+            fullRecipe: currentRecipe.map(item => ({
+                name: item.name,
+                file: item.file,
+                tab: item.tab
+            }))
+        };
 
-    // 주방으로 보낼 데이터 보따리
-    const orderData = {
-        customer: customerName,
-        // 주방에서 그림 그릴 때 필요한 핵심 정보만 쏙쏙 뽑아서 보냅니다.
-        fullRecipe: currentRecipe.map(item => ({
-            file: item.file, // 예: 'patty'
-            tab: item.tab    // 예: 'burger'
-        }))
-    };
-
-    try {
-        conn.send(orderData);
-        alert("💳 결제 완료! 주방으로 주문을 전달했습니다.");
-        location.reload();
-    } catch (e) {
-        alert("전송 중 오류가 발생했습니다. 다시 시도해 주세요.");
+        try {
+            conn.send(orderData);
+            alert("💳 결제 완료! 주방으로 주문을 전달했습니다.");
+            location.reload();
+        } catch (e) {
+            console.error("전송 오류:", e);
+            alert("전송 중 오류가 발생했습니다. 다시 시도해 주세요.");
+        }
     }
-}
 </script>
 </body>
 </html>
