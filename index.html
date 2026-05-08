@@ -201,7 +201,7 @@
         }, 4000);
     }
 
-// index.html의 sendFinalOrder 함수 내부를 아래처럼 교체하세요.
+// index.html 의 sendFinalOrder 함수 부분을 아래로 교체하세요.
 function sendFinalOrder() {
     if (!conn || !conn.open) {
         alert("주방 연결을 확인해 주세요.");
@@ -209,15 +209,19 @@ function sendFinalOrder() {
         return;
     }
 
-    // [중요] 주방에서 그림을 그릴 수 있게 'fullRecipe' 데이터를 함께 보냅니다.
+    // [중요] 주방에서 그림을 그릴 수 있도록 이미지 정보를 포함한 전체 레시피를 보냅니다.
     const orderData = {
         customer: customerName,
-        recipe: currentRecipe.map(i => i.name),
-        fullRecipe: currentRecipe // 이미지 파일명(file) 정보가 담긴 전체 리스트
+        // 주방 모니터에 그림을 그리기 위한 핵심 데이터
+        fullRecipe: currentRecipe.map(item => ({
+            name: item.name,
+            file: item.file,
+            tab: item.tab
+        }))
     };
 
     conn.send(orderData);
-    alert("💳 결제 완료! 주문이 주방으로 전달되었습니다.");
+    alert("💳 결제 완료! 주문이 주방으로 전송되었습니다.");
     location.reload();
 }
 </script>
