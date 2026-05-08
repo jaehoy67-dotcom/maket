@@ -202,33 +202,32 @@
         }, 4000);
     }
 
-    // [수정 완료] 최종 데이터 전송 함수
-    function sendFinalOrder() {
-        if (!conn || !conn.open) {
-            alert("주방과 연결이 끊겼습니다. 다시 시도해 주세요.");
-            connectToKitchen();
-            return;
-        }
-
-        // 주방으로 보낼 데이터 (이름, 이미지파일명, 탭 정보 포함)
-        const orderData = {
-            customer: customerName,
-            fullRecipe: currentRecipe.map(item => ({
-                name: item.name,
-                file: item.file,
-                tab: item.tab
-            }))
-        };
-
-        try {
-            conn.send(orderData);
-            alert("💳 결제 완료! 주방으로 주문을 전달했습니다.");
-            location.reload();
-        } catch (e) {
-            console.error("전송 오류:", e);
-            alert("전송 중 오류가 발생했습니다. 다시 시도해 주세요.");
-        }
+function sendFinalOrder() {
+    if (!conn || !conn.open) {
+        alert("주방과 연결이 끊겼습니다. 다시 시도해 주세요.");
+        connectToKitchen();
+        return;
     }
+
+    // 주방으로 보낼 '그림 정보'가 담긴 데이터 보따리
+    const orderData = {
+        customer: customerName,
+        // 각 재료의 파일명과 종류(tab)를 상세히 담아 보냅니다.
+        fullRecipe: currentRecipe.map(item => ({
+            name: item.name,
+            file: item.file,
+            tab: item.tab
+        }))
+    };
+
+    try {
+        conn.send(orderData);
+        alert("💳 결제가 완료되었습니다! 주방으로 주문을 전달했어요.");
+        location.reload();
+    } catch (e) {
+        alert("전송 중 오류가 발생했습니다.");
+    }
+}
 </script>
 </body>
 </html>
