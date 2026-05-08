@@ -8,110 +8,97 @@
     <style>
         body { background: #333; color: white; font-family: 'Nanum Gothic', sans-serif; padding: 20px; margin: 0; }
         header { border-bottom: 2px solid #555; padding-bottom: 10px; margin-bottom: 20px; text-align: center; }
-        
         .order-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
+        .order-card { background: white; color: #333; padding: 20px; border-radius: 25px; display: flex; flex-direction: row; gap: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); min-height: 400px; }
         
-        /* 주문 카드 레이아웃: 왼쪽(그림), 오른쪽(목록) */
-        .order-card { background: white; color: #333; padding: 20px; border-radius: 25px; display: flex; flex-direction: row; gap: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); min-height: 380px; align-items: flex-start; }
-        
-        /* 🍔 [중요] 주방용 이미지 쌓기 영역 (index.html의 원리 적용) */
-        .food-preview { 
-            position: relative; 
-            width: 180px; 
-            height: 340px; 
-            background: #f1f1f1; 
-            border-radius: 15px; 
-            border: 2px dashed #ccc; 
-            display: flex; 
-            justify-content: center; 
-            align-items: flex-end; 
-            padding-bottom: 20px; 
-            overflow: hidden; 
-        }
+        /* 왼쪽: 음식 그림 영역 */
+        .food-preview { position: relative; width: 180px; height: 360px; background: #f0f0f0; border-radius: 15px; border: 2px dashed #ccc; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px; overflow: hidden; }
+        .preview-img { position: absolute; width: 140px; transition: all 0.3s; }
 
-        /* 층층이 쌓이는 재료 이미지 스타일 */
-        .preview-img { 
-            position: absolute; 
-            width: 140px; 
-            transition: all 0.3s ease; 
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-        }
-
-        .order-info { flex: 1; display: flex; flex-direction: column; height: 100%; }
-        .recipe-list { margin-top: 10px; font-size: 0.95em; overflow-y: auto; max-height: 220px; }
-        .step { background: #eee; padding: 8px 12px; border-radius: 8px; margin-bottom: 5px; font-weight: bold; border: 1px solid #ddd; color: #555; }
+        /* 오른쪽: 주문 정보 영역 */
+        .order-info { flex: 1; display: flex; flex-direction: column; }
+        .recipe-list { margin-top: 10px; font-size: 0.95em; overflow-y: auto; max-height: 250px; }
+        .step { background: #eee; padding: 8px 12px; border-radius: 8px; margin-bottom: 5px; font-weight: bold; border: 1px solid #ddd; }
 
         .done-btn { background: #27AE60; color: white; border: none; padding: 15px; border-radius: 15px; margin-top: auto; font-size: 1.1em; font-weight: bold; cursor: pointer; }
-        #status { font-size: 0.8em; color: #27AE60; margin-bottom: 10px; }
+        #audio-btn { position: fixed; bottom: 20px; right: 20px; background: #F39C12; padding: 15px; border-radius: 10px; cursor: pointer; z-index: 1000; font-weight: bold; }
     </style>
 </head>
 <body>
-    <header>
-        <h1>👨‍🍳 진영 자동차 마을 - 요리 주문서</h1>
-        <div id="status">주방 연결 대기 중...</div>
-    </header>
-
-    <div id="order-list" class="order-grid">
-        </div>
+    <header><h1>👨‍🍳 실시간 요리 주문서🔔</h1></header>
+    <div id="audio-btn" onclick="this.style.display='none'">🔔 소리 켜기 (클릭 필수)</div>
+    <div id="order-list" class="order-grid"></div>
 
 <script>
+    // 선생님이 말씀하신 음식 데이터 코드 추가
+    const menus = {
+        burger: [
+            { id: 'bun_bottom', name: '아래빵', icon: '🍞' },
+            { id: 'patty', name: '패티', icon: '🍖' },
+            { id: 'lettuce', name: '양상추', icon: '🥬' },
+            { id: 'cheese', name: '치즈', icon: '🧀' },
+            { id: 'tomato', name: '토마토', icon: '🍅' },
+            { id: 'bun_top', name: '위빵', icon: '🍞' }
+        ],
+        skewer: [
+            { id: 'steak', name: '스테이크', icon: '🥩' },
+            { id: 'shrimp', name: '새우', icon: '🍤' },
+            { id: 'tomato', name: '방울토마토', icon: '🍅' },
+            { id: 'pepper', name: '피망', icon: '🫑' }
+        ],
+        drink: [
+            { id: 'cola', name: '콜라', icon: '🥤' },
+            { id: 'cider', name: '사이다', icon: '🫧' },
+            { id: 'juice', name: '주스', icon: '🧃' }
+        ]
+    };
+
     const KITCHEN_ID = 'jinyeong-burger-kitchen-2026';
     const peer = new Peer(KITCHEN_ID);
     const orderList = document.getElementById('order-list');
-    const statusText = document.getElementById('status');
 
-    peer.on('open', (id) => {
-        statusText.innerText = "✅ 주방 시스템 연결 완료 (ID: " + id + ")";
-    });
+    peer.on('open', () => console.log('주방 준비 완료!'));
 
     peer.on('connection', (conn) => {
         conn.on('data', (data) => {
-            console.log('주문 데이터 수신:', data);
+            console.log('주문 도착:', data);
             
             const card = document.createElement('div');
             card.className = 'order-card';
 
-            // [핵심 로직] 전달받은 레시피를 바탕으로 이미지를 한 층씩 쌓아 올립니다.
             let imageStackHtml = '';
             let textListHtml = '';
 
+            // 전달받은 데이터를 메뉴판(menus)과 대조하여 처리
             if (data.fullRecipe && Array.isArray(data.fullRecipe)) {
                 data.fullRecipe.forEach((item, index) => {
-                    // 재료 종류별 쌓기 간격 조절
-                    let bottomPos = index * 25; // 기본(햄버거 등) 쌓기 간격
-                    if(item.tab === 'skewer') bottomPos = 50 + (index * 45); // 꼬치는 조금 더 넓게
-                    if(item.tab === 'drink') bottomPos = 30 + (index * 60);
+                    // 1. 메뉴 데이터에서 해당 아이템 찾기
+                    const category = item.tab; 
+                    const menuInfo = menus[category].find(m => m.id === item.file);
+                    const displayName = menuInfo ? `${menuInfo.icon} ${menuInfo.name}` : item.name;
 
-                    // 깃허브 폴더에 있는 이미지 파일명을 사용해 <img> 태그 생성
-                    imageStackHtml += `
-                        <img src="${item.file}.png" class="preview-img" 
-                             style="bottom: ${bottomPos}px; z-index: ${index + 100};">
-                    `;
-
-                    // 글자 목록 생성
-                    textListHtml += `<div class="step">${index + 1}. ${item.name}</div>`;
+                    // 2. 그림 생성
+                    let bottomOffset = index * 25; 
+                    if (item.tab === 'skewer') bottomOffset = 50 + (index * 40);
+                    imageStackHtml += `<img src="${item.file}.png" class="preview-img" style="bottom:${bottomOffset}px; z-index:${index+10};">`;
+                    
+                    // 3. 텍스트 리스트 생성
+                    textListHtml += `<div class="step">${index + 1}. ${displayName}</div>`;
                 });
             }
 
             card.innerHTML = `
-                <div class="food-preview">
-                    ${imageStackHtml || '<p style="color:#ccc; margin-top:140px;">그림 데이터 없음</p>'}
-                </div>
+                <div class="food-preview">${imageStackHtml || '<p style="color:#ccc; margin-top:140px;">그림 데이터 없음</p>'}</div>
                 <div class="order-info">
                     <h2 style="margin:0 0 10px 0; color:#F39C12;">🎈 ${data.customer || '친구'}의 주문</h2>
-                    <div class="recipe-list">
-                        ${textListHtml}
-                    </div>
+                    <div class="recipe-list">${textListHtml}</div>
                     <button class="done-btn" onclick="this.closest('.order-card').remove()">✅ 요리 완료!</button>
                 </div>
             `;
-            
-            // 최신 주문을 맨 앞에 추가
             orderList.insertBefore(card, orderList.firstChild);
             
-            // 주문 알림음
-            const audio = new Audio('https://t1.daumcdn.net/cfile/tistory/99412B355A38B17305?original');
-            audio.play().catch(() => console.log("소리를 재생하려면 화면을 한 번 클릭해주세요."));
+            // 벨소리
+            new Audio('https://t1.daumcdn.net/cfile/tistory/99412B355A38B17305?original').play().catch(() => {});
         });
     });
 </script>
