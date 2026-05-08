@@ -2,11 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width,
-               initial-scale=1.0">
-
-<title>진영 유치원 주방 시스템</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>진영 유치원 주방 주문 시스템</title>
 
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
@@ -23,33 +20,15 @@ body{
 h1{
     text-align:center;
     color:#F39C12;
-    font-size:2.5rem;
     margin-bottom:25px;
+    font-size:2.3rem;
 }
 
-/* 연결 상태 */
-
-#status-bar{
-    position:fixed;
-    top:10px;
-    right:10px;
-    background:white;
-    padding:10px 18px;
-    border-radius:15px;
-    font-weight:bold;
-    z-index:999;
-    box-shadow:0 5px 15px rgba(0,0,0,0.2);
-}
-
-/* 주문 목록 */
-
-#order-list{
+.order-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(750px,1fr));
+    grid-template-columns:repeat(auto-fill,minmax(700px,1fr));
     gap:25px;
 }
-
-/* 카드 */
 
 .order-card{
     background:white;
@@ -60,9 +39,8 @@ h1{
     flex-direction:column;
     gap:20px;
     position:relative;
+    overflow:hidden;
 }
-
-/* 상단 */
 
 .top-section{
     display:flex;
@@ -77,11 +55,9 @@ h1{
 }
 
 .order-time{
-    color:#888;
     font-size:1rem;
+    color:#888;
 }
-
-/* 음식 영역 */
 
 .food-wrapper{
     display:flex;
@@ -109,16 +85,14 @@ h1{
     top:10px;
     left:50%;
     transform:translateX(-50%);
-    font-size:1.1rem;
     font-weight:bold;
+    font-size:1.1rem;
 }
 
 .preview-img{
     position:absolute;
     transition:all 0.3s;
 }
-
-/* 레시피 */
 
 .recipe-list{
     background:#FAFAFA;
@@ -135,8 +109,6 @@ h1{
     font-weight:bold;
 }
 
-/* 버튼 */
-
 .done-btn{
     border:none;
     background:#27AE60;
@@ -146,37 +118,140 @@ h1{
     font-size:1.2rem;
     font-weight:bold;
     cursor:pointer;
+    transition:0.2s;
 }
 
 .done-btn:hover{
     transform:scale(1.03);
 }
 
-/* 신규 주문 애니메이션 */
-
-.new-order{
-
-    animation:pop 0.4s;
-
+.status-bar{
+    position:fixed;
+    top:10px;
+    right:10px;
+    background:white;
+    padding:10px 18px;
+    border-radius:15px;
+    font-weight:bold;
+    color:#27AE60;
+    z-index:999;
+    box-shadow:0 5px 15px rgba(0,0,0,0.2);
 }
 
-@keyframes pop{
+/* 조리중 배지 */
+
+.cooking-badge{
+    position:absolute;
+    top:15px;
+    right:15px;
+    background:#F39C12;
+    color:white;
+    padding:8px 14px;
+    border-radius:30px;
+    font-weight:bold;
+    animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
 
     0%{
-        transform:scale(0.7);
-        opacity:0;
+        transform:scale(1);
+    }
+
+    50%{
+        transform:scale(1.08);
     }
 
     100%{
         transform:scale(1);
+    }
+
+}
+
+/* 조리중 바 */
+
+.cooking-bar-wrap{
+    width:100%;
+    height:18px;
+    background:#EEE;
+    border-radius:30px;
+    overflow:hidden;
+}
+
+.cooking-bar{
+    height:100%;
+    width:0%;
+    background:#F39C12;
+    transition:width linear;
+}
+
+/* 주문 완료 전체화면 */
+
+.complete-screen{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.8);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:99999;
+    animation:fadeIn 0.3s;
+}
+
+.complete-box{
+    background:white;
+    padding:50px;
+    border-radius:40px;
+    text-align:center;
+    animation:bounce 0.5s;
+}
+
+.complete-box h1{
+    font-size:4rem;
+    color:#27AE60;
+    margin:0;
+}
+
+.complete-box h2{
+    font-size:2.5rem;
+    margin-top:20px;
+    color:#E67E22;
+}
+
+@keyframes fadeIn{
+
+    from{
+        opacity:0;
+    }
+
+    to{
         opacity:1;
+    }
+
+}
+
+@keyframes bounce{
+
+    0%{
+        transform:scale(0.5);
+    }
+
+    70%{
+        transform:scale(1.05);
+    }
+
+    100%{
+        transform:scale(1);
     }
 
 }
 
 @media(max-width:900px){
 
-    #order-list{
+    .order-grid{
         grid-template-columns:1fr;
     }
 
@@ -192,23 +267,18 @@ h1{
 
 <body>
 
-<div id="status-bar">
+<div class="status-bar" id="statusBar">
 🟡 연결 준비중...
 </div>
 
-<h1>👨‍🍳 실시간 주방 주문서 👨‍🍳</h1>
+<h1>👨‍🍳 실시간 요리 주문서 👨‍🍳</h1>
 
-<div id="order-list"></div>
+<div class="order-grid" id="order-list"></div>
 
 <script>
 
-const orderList =
-    document.getElementById('order-list');
-
-const statusBar =
-    document.getElementById('status-bar');
-
-/* 메뉴 */
+const orderList = document.getElementById('order-list');
+const statusBar = document.getElementById('statusBar');
 
 const menus = {
 
@@ -235,8 +305,6 @@ const menus = {
     ]
 };
 
-/* Peer */
-
 const peer = new Peer(
     'jinyeong-burger-kitchen-2026',
     {
@@ -249,43 +317,32 @@ const peer = new Peer(
 
 peer.on('open',(id)=>{
 
-    console.log('주방 서버 시작');
+    console.log('주방 서버 시작:',id);
 
-    statusBar.innerHTML =
-        '🟢 연결 준비 완료';
-
+    statusBar.innerHTML = '🟢 연결 준비 완료';
 });
 
 peer.on('error',(err)=>{
 
     console.error(err);
 
-    statusBar.innerHTML =
-        '🔴 연결 오류';
+    statusBar.innerHTML = '🔴 연결 오류';
 
+    alert('연결 오류 : ' + err.type);
 });
-
-/* 주문 받기 */
 
 peer.on('connection',(conn)=>{
 
     conn.on('data',(data)=>{
 
-        if(data.type === 'order'){
+        createOrderCard(data);
 
-            createOrderCard(data,conn);
-
-            playOrderVoice();
-
-        }
-
+        playBell();
     });
 
 });
 
-/* 주문 카드 */
-
-function createOrderCard(data,conn){
+function createOrderCard(data){
 
     let burgerHtml = '';
     let skewerHtml = '';
@@ -297,8 +354,7 @@ function createOrderCard(data,conn){
 
     let listHtml = '';
 
-    if(data.fullRecipe &&
-       Array.isArray(data.fullRecipe)){
+    if(data.fullRecipe && Array.isArray(data.fullRecipe)){
 
         data.fullRecipe.forEach((item,idx)=>{
 
@@ -312,21 +368,14 @@ function createOrderCard(data,conn){
                 : item.name;
 
             listHtml += `
-
                 <div class="step">
-
                     ${idx+1}. ${displayName}
-
                 </div>
-
             `;
-
-            /* 햄버거 */
 
             if(item.tab === 'burger'){
 
                 burgerHtml += `
-
                     <img
                         src="${item.file}.png"
                         class="preview-img"
@@ -336,19 +385,14 @@ function createOrderCard(data,conn){
                             z-index:${burgerIndex + 10};
                         "
                     >
-
                 `;
 
                 burgerIndex++;
-
             }
-
-            /* 꼬치 */
 
             else if(item.tab === 'skewer'){
 
                 skewerHtml += `
-
                     <img
                         src="${item.file}.png"
                         class="preview-img"
@@ -358,19 +402,14 @@ function createOrderCard(data,conn){
                             z-index:${skewerIndex + 10};
                         "
                     >
-
                 `;
 
                 skewerIndex++;
-
             }
-
-            /* 음료 */
 
             else if(item.tab === 'drink'){
 
                 drinkHtml += `
-
                     <img
                         src="${item.file}.png"
                         class="preview-img"
@@ -380,11 +419,9 @@ function createOrderCard(data,conn){
                             z-index:${drinkIndex + 10};
                         "
                     >
-
                 `;
 
                 drinkIndex++;
-
             }
 
         });
@@ -394,77 +431,58 @@ function createOrderCard(data,conn){
     const now = new Date();
 
     const timeText =
-        now.getHours()
-        .toString()
-        .padStart(2,'0')
+        now.getHours().toString().padStart(2,'0')
         + ':'
-        +
-        now.getMinutes()
-        .toString()
-        .padStart(2,'0');
+        + now.getMinutes().toString().padStart(2,'0');
 
-    const card =
-        document.createElement('div');
+    const card = document.createElement('div');
 
-    card.className =
-        'order-card new-order';
+    card.className = 'order-card';
 
     card.innerHTML = `
+
+        <div class="cooking-badge">
+            🔥 조리중...
+        </div>
 
         <div class="top-section">
 
             <div class="customer-name">
-
                 🎈 ${data.customer} 친구
-
             </div>
 
             <div class="order-time">
-
                 ${timeText}
-
             </div>
 
         </div>
 
         <div class="food-wrapper">
 
-            <!-- 햄버거 -->
-
             <div class="food-box">
 
                 <div class="food-title">
-
                     🍔 햄버거
-
                 </div>
 
                 ${burgerHtml}
 
             </div>
 
-            <!-- 꼬치 -->
-
             <div class="food-box">
 
                 <div class="food-title">
-
                     🍢 꼬치
-
                 </div>
 
                 ${skewerHtml}
 
             </div>
 
-            <!-- 음료 -->
-
             <div class="food-box">
 
                 <div class="food-title">
-
                     🥤 음료
-
                 </div>
 
                 ${drinkHtml}
@@ -474,13 +492,17 @@ function createOrderCard(data,conn){
         </div>
 
         <div class="recipe-list">
-
             ${listHtml}
+        </div>
 
+        <!-- 조리 진행바 -->
+        <div class="cooking-bar-wrap">
+            <div class="cooking-bar"></div>
         </div>
 
         <button
-            class="done-btn">
+            class="done-btn"
+            onclick="finishOrder(this,'${data.customer}')">
 
             ✅ 요리 완료
 
@@ -488,51 +510,96 @@ function createOrderCard(data,conn){
 
     `;
 
-    /* 완료 버튼 */
+    orderList.insertBefore(card, orderList.firstChild);
 
-    card
-    .querySelector('.done-btn')
-    .addEventListener('click',()=>{
+    // 자동 조리 애니메이션
+    startCookingAnimation(card);
+}
 
-        try{
+function startCookingAnimation(card){
 
-            conn.send({
+    const bar = card.querySelector('.cooking-bar');
 
-                type:'complete',
+    setTimeout(()=>{
 
-                customer:data.customer
+        bar.style.transition = 'width 15s linear';
 
-            });
+        bar.style.width = '100%';
 
-        }catch(e){
-
-            console.log(e);
-
-        }
-
-        card.remove();
-
-    });
-
-    orderList.insertBefore(
-        card,
-        orderList.firstChild
-    );
+    },100);
 
 }
 
-/* 주문 효과음 */
+function finishOrder(button, customerName){
 
-function playOrderVoice(){
+    const card = button.closest('.order-card');
 
-    // 띵동 효과음
+    showCompleteScreen(customerName);
+
+    speakOrder(customerName);
+
+    setTimeout(()=>{
+
+        card.remove();
+
+    },500);
+
+}
+
+function showCompleteScreen(name){
+
+    const screen = document.createElement('div');
+
+    screen.className = 'complete-screen';
+
+    screen.innerHTML = `
+
+        <div class="complete-box">
+
+            <h1>🍔 완료! 🍟</h1>
+
+            <h2>
+                🎉 ${name} 친구 주문 나왔어요~
+            </h2>
+
+        </div>
+
+    `;
+
+    document.body.appendChild(screen);
+
+    setTimeout(()=>{
+
+        screen.remove();
+
+    },4000);
+
+}
+
+function speakOrder(name){
+
+    if(!window.speechSynthesis) return;
+
+    const text = `${name} 친구 주문 나왔어요`;
+
+    const utterance =
+        new SpeechSynthesisUtterance(text);
+
+    utterance.lang = 'ko-KR';
+
+    utterance.rate = 0.9;
+
+    speechSynthesis.speak(utterance);
+
+}
+
+function playBell(){
 
     try{
 
-        const audio =
-            new Audio(
-                'https://cdn.pixabay.com/download/audio/2022/03/10/audio_c8630b1cfd.mp3'
-            );
+        const audio = new Audio(
+            'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3'
+        );
 
         audio.volume = 1;
 
@@ -540,28 +607,9 @@ function playOrderVoice(){
 
     }catch(e){
 
-        console.log(e);
+        console.log('효과음 실패');
 
     }
-
-    // 음성 안내
-
-    setTimeout(()=>{
-
-        if(!window.speechSynthesis) return;
-
-        const utterance =
-            new SpeechSynthesisUtterance(
-                '딩동 주문이 들어왔습니다'
-            );
-
-        utterance.lang = 'ko-KR';
-
-        utterance.rate = 0.9;
-
-        speechSynthesis.speak(utterance);
-
-    },700);
 
 }
 
