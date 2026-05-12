@@ -90,11 +90,11 @@
 
         @keyframes dropIn {
             from {
-                transform: translateY(-500px);
+                transform: translate(-50%, -500px);
                 opacity: 0;
             }
             to {
-                transform: translateY(0);
+                transform: translate(-50%, 0);
                 opacity: 1;
             }
         }
@@ -152,6 +152,11 @@
             box-shadow: 0 4px 0 #D35400;
         }
 
+        .btn-ing:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
         #order-btn {
             position: fixed;
             right: 20px;
@@ -164,6 +169,7 @@
             font-size: 1.2em;
             font-weight: bold;
             z-index: 160;
+            box-shadow: 0 4px 0 #C0392B;
         }
 
         #face-pay-screen {
@@ -376,47 +382,29 @@ function connectToKitchen() {
 
     conn.on('error', (err) => {
         console.error(err);
-
-        setTimeout(() => {
-            connectToKitchen();
-        }, 3000);
+        setTimeout(() => { connectToKitchen(); }, 3000);
     });
 
     conn.on('close', () => {
-
-        setTimeout(() => {
-            connectToKitchen();
-        }, 3000);
+        setTimeout(() => { connectToKitchen(); }, 3000);
     });
 }
 
 document.getElementById('barcode-input')
 .addEventListener('change', (e) => {
-
     customerName = e.target.value;
-
     document.getElementById('id-screen').style.display = 'none';
-
     switchTab('burger');
 });
 
 function switchTab(tab) {
-
     currentTab = tab;
-
-    document.querySelectorAll('.tab-btn')
-    .forEach(btn => btn.classList.remove('active'));
-
-    document.getElementById('tab-' + tab)
-    .classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
 
     const menuBar = document.getElementById('menu-bar');
-
-    menuBar.innerHTML = menus[tab]
-    .map(m => `
-        <button class="btn-ing"
-                onclick="addIng('${m.id}','${m.icon} ${m.name}')">
-
+    menuBar.innerHTML = menus[tab].map(m => `
+        <button class="btn-ing" onclick="addIng('${m.id}','${m.icon} ${m.name}')">
             ${m.icon}<br>${m.name}
         </button>
     `).join('');
@@ -425,19 +413,12 @@ function switchTab(tab) {
 }
 
 function addIng(file, name) {
-
     const area = document.getElementById('cooking-area');
-
     const uniqueId = 'ing-' + Date.now();
-
     const img = document.createElement('img');
-
     img.src = `${file}.png`;
-
     img.id = uniqueId;
-
     img.className = 'ing-img';
-
     area.appendChild(img);
 
     currentRecipe.push({
@@ -451,51 +432,43 @@ function addIng(file, name) {
 }
 
 function undoLast() {
-
     if(currentRecipe.length === 0) return;
-
     const last = currentRecipe.pop();
-
     document.getElementById(last.id)?.remove();
-
     updatePositions();
 }
 
 function clearAll() {
-
     if(!confirm('전부 다시할까요?')) return;
-
     currentRecipe.forEach(item => {
         document.getElementById(item.id)?.remove();
     });
-
     currentRecipe = [];
-
     updatePositions();
 }
 
 function updatePositions() {
-
     const stick = document.getElementById('skewer-stick');
+    
+    // 현재 선택된 탭에 쌓인 재료의 개수를 파악
+    const currentTabCount = currentRecipe.filter(item => item.tab === currentTab).length;
 
     let burgerIndex = 0;
     let skewerIndex = 0;
     let drinkIndex = 0;
 
+    // 선생님의 원본 위치 설정
     const posConfig = {
-
         burger: {
             burger:{x:'50%', s:1},
             skewer:{x:'15%', s:0.6},
             drink:{x:'85%', s:0.6}
         },
-
         skewer: {
             burger:{x:'15%', s:0.6},
             skewer:{x:'50%', s:1},
             drink:{x:'85%', s:0.6}
         },
-
         drink: {
             burger:{x:'15%', s:0.6},
             skewer:{x:'85%', s:0.6},
@@ -504,46 +477,43 @@ function updatePositions() {
     };
 
     const config = posConfig[currentTab];
-
     stick.style.left = config.skewer.x;
+    stick.style.opacity = (currentTab === 'skewer') ? "1" : "0.5";
 
     currentRecipe.forEach(item => {
-
         const el = document.getElementById(item.id);
-
         if(!el) return;
 
         const c = config[item.tab];
+        const isCurrent = (item.tab === currentTab);
+
+        // [핵심 보완] 한 화면에 들어오도록 동적 스케일 및 간격 계산
+        let shrinkFactor = 1.0;
+        let responsiveScale = c.s;
+
+        // 재료가 6개 이상 쌓이면 현재 탭의 재료만 크기와 간격을 줄임
+        if (isCurrent && currentTabCount > 6) {
+            responsiveScale = c.s * 0.75; // 크기 축소
+            shrinkFactor = 0.65;          // 간격 압축
+        }
 
         el.style.left = c.x;
-
-        el.style.transform =
-            `translateX(-50%) scale(${c.s})`;
+        el.style.transform = `translateX(-50%) scale(${responsiveScale})`;
+        el.style.opacity = isCurrent ? "1" : "0.5";
 
         if(item.tab === 'burger') {
-
             el.style.width = '280px';
-            el.style.bottom =
-                `${80 + burgerIndex * 35 * c.s}px`;
-
+            el.style.bottom = `${80 + burgerIndex * (35 * shrinkFactor)}px`;
             burgerIndex++;
         }
-
         else if(item.tab === 'skewer') {
-
             el.style.width = '180px';
-            el.style.bottom =
-                `${110 + skewerIndex * 60 * c.s}px`;
-
+            el.style.bottom = `${110 + skewerIndex * (60 * shrinkFactor)}px`;
             skewerIndex++;
         }
-
-        else {
-
+        else if(item.tab === 'drink') {
             el.style.width = '150px';
-            el.style.bottom =
-                `${80 + drinkIndex * 70 * c.s}px`;
-
+            el.style.bottom = `${80 + drinkIndex * (70 * shrinkFactor)}px`;
             drinkIndex++;
         }
     });
@@ -555,88 +525,53 @@ function updatePositions() {
 }
 
 async function startFacePay() {
-
     if(currentRecipe.length === 0) {
         alert('메뉴를 골라주세요!');
         return;
     }
-
     const screen = document.getElementById('face-pay-screen');
-
     const video = document.getElementById('camera-view');
-
     const bar = document.getElementById('pay-bar');
-
     screen.style.display = 'flex';
 
     try {
-
-        const stream =
-            await navigator.mediaDevices.getUserMedia({
-                video: true
-            });
-
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
-
     } catch(e) {
-
         console.error(e);
-
         sendFinalOrder();
-
         return;
     }
 
+    setTimeout(() => { bar.style.width = '100%'; }, 300);
     setTimeout(() => {
-        bar.style.width = '100%';
-    }, 300);
-
-    setTimeout(() => {
-
         if(video.srcObject) {
-            video.srcObject.getTracks()
-            .forEach(t => t.stop());
+            video.srcObject.getTracks().forEach(t => t.stop());
         }
-
         sendFinalOrder();
-
     }, 4000);
 }
 
 function sendFinalOrder() {
-
     if(!conn || !conn.open) {
-
         alert('주방 연결이 아직 안 되었어요!');
-
         connectToKitchen();
-
         return;
     }
-
     const orderData = {
-
         customer: customerName,
-
         fullRecipe: currentRecipe.map(item => ({
             name: item.name,
             file: item.file,
             tab: item.tab
         }))
     };
-
     try {
-
         conn.send(orderData);
-
         alert('주문 완료!');
-
         location.reload();
-
     } catch(e) {
-
         console.error(e);
-
         alert('전송 오류!');
     }
 }
@@ -644,6 +579,5 @@ function sendFinalOrder() {
 switchTab('burger');
 
 </script>
-
 </body>
 </html>
