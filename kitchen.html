@@ -4,616 +4,66 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>진영 유치원 주방 주문 시스템</title>
-
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
 <style>
-
-body{
-    margin:0;
-    padding:20px;
-    background:#2C3E50;
-    font-family:'Nanum Gothic', sans-serif;
-    overflow-x:hidden;
-}
-
-h1{
-    text-align:center;
-    color:#F39C12;
-    margin-bottom:25px;
-    font-size:2.3rem;
-}
-
-.order-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(700px,1fr));
-    gap:25px;
-}
-
-.order-card{
-    background:white;
-    border-radius:30px;
-    padding:25px;
-    box-shadow:0 10px 25px rgba(0,0,0,0.4);
-    display:flex;
-    flex-direction:column;
-    gap:20px;
-    position:relative;
-    overflow:hidden;
-}
-
-.top-section{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-
-.customer-name{
-    font-size:2rem;
-    font-weight:bold;
-    color:#E67E22;
-}
-
-.order-time{
-    font-size:1rem;
-    color:#888;
-}
-
-.food-wrapper{
-    display:flex;
-    justify-content:center;
-    gap:20px;
-    flex-wrap:wrap;
-}
-
-.food-box{
-    width:180px;
-    height:320px;
-    background:#F7F7F7;
-    border-radius:20px;
-    border:3px dashed #DDD;
-    position:relative;
-    overflow:hidden;
-    display:flex;
-    justify-content:center;
-    align-items:flex-end;
-    padding-bottom:20px;
-}
-
-.food-title{
-    position:absolute;
-    top:10px;
-    left:50%;
-    transform:translateX(-50%);
-    font-weight:bold;
-    font-size:1.1rem;
-}
-
-.preview-img{
-    position:absolute;
-    transition:all 0.3s;
-}
-
-.recipe-list{
-    background:#FAFAFA;
-    border-radius:15px;
-    padding:15px;
-}
-
-.step{
-    background:white;
-    border:1px solid #DDD;
-    border-radius:10px;
-    padding:10px;
-    margin-bottom:8px;
-    font-weight:bold;
-}
-
-.done-btn{
-    border:none;
-    background:#27AE60;
-    color:white;
-    padding:18px;
-    border-radius:18px;
-    font-size:1.2rem;
-    font-weight:bold;
-    cursor:pointer;
-    transition:0.2s;
-}
-
-.done-btn:hover{
-    transform:scale(1.03);
-}
-
-.status-bar{
-    position:fixed;
-    top:10px;
-    right:10px;
-    background:white;
-    padding:10px 18px;
-    border-radius:15px;
-    font-weight:bold;
-    color:#27AE60;
-    z-index:999;
-    box-shadow:0 5px 15px rgba(0,0,0,0.2);
-}
-
-/* 조리중 배지 */
-
-.cooking-badge{
-    position:absolute;
-    top:15px;
-    right:15px;
-    background:#F39C12;
-    color:white;
-    padding:8px 14px;
-    border-radius:30px;
-    font-weight:bold;
-    animation:pulse 1s infinite;
-}
-
-@keyframes pulse{
-
-    0%{
-        transform:scale(1);
-    }
-
-    50%{
-        transform:scale(1.08);
-    }
-
-    100%{
-        transform:scale(1);
-    }
-
-}
-
-/* 조리중 바 */
-
-.cooking-bar-wrap{
-    width:100%;
-    height:18px;
-    background:#EEE;
-    border-radius:30px;
-    overflow:hidden;
-}
-
-.cooking-bar{
-    height:100%;
-    width:0%;
-    background:#F39C12;
-    transition:width linear;
-}
-
-/* 주문 완료 전체화면 */
-
-.complete-screen{
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background:rgba(0,0,0,0.8);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    z-index:99999;
-    animation:fadeIn 0.3s;
-}
-
-.complete-box{
-    background:white;
-    padding:50px;
-    border-radius:40px;
-    text-align:center;
-    animation:bounce 0.5s;
-}
-
-.complete-box h1{
-    font-size:4rem;
-    color:#27AE60;
-    margin:0;
-}
-
-.complete-box h2{
-    font-size:2.5rem;
-    margin-top:20px;
-    color:#E67E22;
-}
-
-@keyframes fadeIn{
-
-    from{
-        opacity:0;
-    }
-
-    to{
-        opacity:1;
-    }
-
-}
-
-@keyframes bounce{
-
-    0%{
-        transform:scale(0.5);
-    }
-
-    70%{
-        transform:scale(1.05);
-    }
-
-    100%{
-        transform:scale(1);
-    }
-
-}
-
-@media(max-width:900px){
-
-    .order-grid{
-        grid-template-columns:1fr;
-    }
-
-    .food-wrapper{
-        flex-direction:column;
-        align-items:center;
-    }
-
-}
-
+    body{ margin:0; padding:20px; background:#2C3E50; font-family:'Nanum Gothic', sans-serif; overflow-x:hidden; }
+    h1{ text-align:center; color:#F39C12; margin-bottom:25px; font-size:2.3rem; }
+    .order-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(700px,1fr)); gap:25px; }
+    .order-card{ background:white; border-radius:30px; padding:25px; box-shadow:0 10px 25px rgba(0,0,0,0.4); display:flex; flex-direction:column; gap:20px; position:relative; overflow:hidden; }
+    .top-section{ display:flex; justify-content:space-between; align-items:center; }
+    .customer-name{ font-size:2rem; font-weight:bold; color:#E67E22; }
+    .order-time{ font-size:1rem; color:#888; }
+    .food-wrapper{ display:flex; justify-content:center; gap:20px; flex-wrap:wrap; }
+    .food-box{ width:180px; height:320px; background:#F7F7F7; border-radius:20px; border:3px dashed #DDD; position:relative; overflow:hidden; display:flex; justify-content:center; align-items:flex-end; padding-bottom:20px; }
+    .food-title{ position:absolute; top:10px; left:50%; transform:translateX(-50%); font-weight:bold; font-size:1.1rem; }
+    .preview-img{ position:absolute; transition:all 0.3s; }
+    .recipe-list{ background:#FAFAFA; border-radius:15px; padding:15px; }
+    .step{ background:white; border:1px solid #DDD; border-radius:10px; padding:10px; margin-bottom:8px; font-weight:bold; }
+    .done-btn{ border:none; background:#27AE60; color:white; padding:18px; border-radius:18px; font-size:1.2rem; font-weight:bold; cursor:pointer; transition:0.2s; }
+    .cooking-badge{ position:absolute; top:15px; right:15px; background:#F39C12; color:white; padding:8px 14px; border-radius:30px; font-weight:bold; animation:pulse 1s infinite; }
+    @keyframes pulse{ 0%{ transform:scale(1); } 50%{ transform:scale(1.08); } 100%{ transform:scale(1); } }
+    .cooking-bar-wrap{ width:100%; height:18px; background:#EEE; border-radius:30px; overflow:hidden; }
+    .cooking-bar{ height:100%; width:0%; background:#F39C12; transition:width linear; }
+    .status-bar{ position:fixed; top:10px; right:10px; background:white; padding:10px 18px; border-radius:15px; font-weight:bold; color:#27AE60; z-index:999; }
 </style>
 </head>
-
 <body>
-
-<div class="status-bar" id="statusBar">
-🟡 연결 준비중...
-</div>
-
-<h1>👨‍🍳 실시간 요리 주문서 👨‍🍳</h1>
-
+<div class="status-bar" id="statusBar">🟡 연결 대기 중...</div>
+<h1>👨‍🍳 주방 주문 확인서 👨‍🍳</h1>
 <div class="order-grid" id="order-list"></div>
-
 <script>
-
-const orderList = document.getElementById('order-list');
-const statusBar = document.getElementById('statusBar');
-
-const menus = {
-
-    burger:[
-        { id:'bun_bottom', name:'아래빵', icon:'🍞' },
-        { id:'patty', name:'패티', icon:'🍖' },
-        { id:'lettuce', name:'양상추', icon:'🥬' },
-        { id:'cheese', name:'치즈', icon:'🧀' },
-        { id:'tomato', name:'토마토', icon:'🍅' },
-        { id:'bun_top', name:'위빵', icon:'🍞' }
-    ],
-
-    skewer:[
-        { id:'steak', name:'스테이크', icon:'🥩' },
-        { id:'shrimp', name:'새우', icon:'🍤' },
-        { id:'tomato', name:'방울토마토', icon:'🍅' },
-        { id:'pepper', name:'피망', icon:'🫑' }
-    ],
-
-    drink:[
-        { id:'cola', name:'콜라', icon:'🥤' },
-        { id:'cider', name:'사이다', icon:'🫧' },
-        { id:'juice', name:'주스', icon:'🧃' }
-    ]
-};
-
-const peer = new Peer(
-    'jinyeong-burger-kitchen-2026',
-    {
-        host:'0.peerjs.com',
-        secure:true,
-        port:443,
-        debug:2
-    }
-);
-
-peer.on('open',(id)=>{
-
-    console.log('주방 서버 시작:',id);
-
-    statusBar.innerHTML = '🟢 연결 준비 완료';
-});
-
-peer.on('error',(err)=>{
-
-    console.error(err);
-
-    statusBar.innerHTML = '🔴 연결 오류';
-
-    alert('연결 오류 : ' + err.type);
-});
-
+let activeConns = {};
+const peer = new Peer('jinyeong-burger-kitchen-2026',{ host:'0.peerjs.com', secure:true, port:443, debug:2 });
+peer.on('open',()=>document.getElementById('statusBar').innerHTML='🟢 주방 운영 중');
 peer.on('connection',(conn)=>{
-
-    conn.on('data',(data)=>{
-
-        createOrderCard(data);
-
-        playBell();
-    });
-
+    activeConns[conn.peer] = conn;
+    conn.on('data',(data)=>{ data.peerId=conn.peer; createCard(data); playBell(); });
 });
 
-function createOrderCard(data){
-
-    let burgerHtml = '';
-    let skewerHtml = '';
-    let drinkHtml = '';
-
-    let burgerIndex = 0;
-    let skewerIndex = 0;
-    let drinkIndex = 0;
-
-    let listHtml = '';
-
-    if(data.fullRecipe && Array.isArray(data.fullRecipe)){
-
-        data.fullRecipe.forEach((item,idx)=>{
-
-            const menuInfo =
-                menus[item.tab]
-                ?.find(m=>m.id===item.file);
-
-            const displayName =
-                menuInfo
-                ? `${menuInfo.icon} ${menuInfo.name}`
-                : item.name;
-
-            listHtml += `
-                <div class="step">
-                    ${idx+1}. ${displayName}
-                </div>
-            `;
-
-            if(item.tab === 'burger'){
-
-                burgerHtml += `
-                    <img
-                        src="${item.file}.png"
-                        class="preview-img"
-                        style="
-                            width:140px;
-                            bottom:${20 + burgerIndex * 24}px;
-                            z-index:${burgerIndex + 10};
-                        "
-                    >
-                `;
-
-                burgerIndex++;
-            }
-
-            else if(item.tab === 'skewer'){
-
-                skewerHtml += `
-                    <img
-                        src="${item.file}.png"
-                        class="preview-img"
-                        style="
-                            width:100px;
-                            bottom:${20 + skewerIndex * 45}px;
-                            z-index:${skewerIndex + 10};
-                        "
-                    >
-                `;
-
-                skewerIndex++;
-            }
-
-            else if(item.tab === 'drink'){
-
-                drinkHtml += `
-                    <img
-                        src="${item.file}.png"
-                        class="preview-img"
-                        style="
-                            width:100px;
-                            bottom:${20 + drinkIndex * 55}px;
-                            z-index:${drinkIndex + 10};
-                        "
-                    >
-                `;
-
-                drinkIndex++;
-            }
-
-        });
-
-    }
-
-    const now = new Date();
-
-    const timeText =
-        now.getHours().toString().padStart(2,'0')
-        + ':'
-        + now.getMinutes().toString().padStart(2,'0');
-
+function createCard(data){
+    let bH='', sH='', dH='', lH='', bI=0, sI=0, dI=0;
+    data.fullRecipe.forEach((i,idx)=>{
+        lH += `<div class="step">${idx+1}. ${i.name}</div>`;
+        if(i.tab==='burger'){ bH+=`<img src="${i.file}.png" class="preview-img" style="width:140px; bottom:${20+bI*24}px; z-index:${bI+10}">`; bI++; }
+        else if(i.tab==='skewer'){ sH+=`<img src="${i.file}.png" class="preview-img" style="width:100px; bottom:${20+sI*45}px; z-index:${sI+10}">`; sI++; }
+        else if(i.tab==='drink'){ dH+=`<img src="${i.file}.png" class="preview-img" style="width:100px; bottom:${20+dI*55}px; z-index:${dI+10}">`; dI++; }
+    });
     const card = document.createElement('div');
-
     card.className = 'order-card';
-
-    card.innerHTML = `
-
-        <div class="cooking-badge">
-            🔥 조리중...
-        </div>
-
-        <div class="top-section">
-
-            <div class="customer-name">
-                🎈 ${data.customer} 고객님
-            </div>
-
-            <div class="order-time">
-                ${timeText}
-            </div>
-
-        </div>
-
-        <div class="food-wrapper">
-
-            <div class="food-box">
-
-                <div class="food-title">
-                    🍔 햄버거
-                </div>
-
-                ${burgerHtml}
-
-            </div>
-
-            <div class="food-box">
-
-                <div class="food-title">
-                    🍢 꼬치
-                </div>
-
-                ${skewerHtml}
-
-            </div>
-
-            <div class="food-box">
-
-                <div class="food-title">
-                    🥤 음료
-                </div>
-
-                ${drinkHtml}
-
-            </div>
-
-        </div>
-
-        <div class="recipe-list">
-            ${listHtml}
-        </div>
-
-        <!-- 조리 진행바 -->
-        <div class="cooking-bar-wrap">
-            <div class="cooking-bar"></div>
-        </div>
-
-        <button
-            class="done-btn"
-            onclick="finishOrder(this,'${data.customer}')">
-
-            ✅ 요리 완료
-
-        </button>
-
-    `;
-
-    orderList.insertBefore(card, orderList.firstChild);
-
-    // 자동 조리 애니메이션
-    startCookingAnimation(card);
+    card.innerHTML = `<div class="cooking-badge">🔥 조리 중</div><div class="top-section"><div class="customer-name">🎈 ${data.customer} 어린이</div></div><div class="food-wrapper"><div class="food-box"><div class="food-title">🍔 햄버거</div>${bH}</div><div class="food-box"><div class="food-title">🍢 꼬치</div>${sH}</div><div class="food-box"><div class="food-title">🥤 음료</div>${dH}</div></div><div class="recipe-list">${lH}</div><div class="cooking-bar-wrap"><div class="cooking-bar"></div></div><button class="done-btn" onclick="finishOrder(this,'${data.customer}','${data.peerId}')">✅ 요리 완료</button>`;
+    document.getElementById('order-list').insertBefore(card, document.getElementById('order-list').firstChild);
+    setTimeout(()=>{ const bar=card.querySelector('.cooking-bar'); bar.style.transition='width 15s linear'; bar.style.width='100%'; },100);
 }
 
-function startCookingAnimation(card){
-
-    const bar = card.querySelector('.cooking-bar');
-
-    setTimeout(()=>{
-
-        bar.style.transition = 'width 15s linear';
-
-        bar.style.width = '100%';
-
-    },100);
-
+function finishOrder(btn, name, peerId){
+    if(activeConns[peerId]) activeConns[peerId].send({ type:'FINISHED', customer:name });
+    btn.closest('.order-card').remove();
+    // 주방에서도 음성 안내 (선택사항)
+    const u = new SpeechSynthesisUtterance(`${name} 요리 완료 신호를 보냈습니다.`);
+    u.lang='ko-KR'; speechSynthesis.speak(u);
 }
 
-function finishOrder(button, customerName){
-
-    const card = button.closest('.order-card');
-
-    showCompleteScreen(customerName);
-
-    speakOrder(customerName);
-
-    setTimeout(()=>{
-
-        card.remove();
-
-    },500);
-
-}
-
-function showCompleteScreen(name){
-
-    const screen = document.createElement('div');
-
-    screen.className = 'complete-screen';
-
-    screen.innerHTML = `
-
-        <div class="complete-box">
-
-            <h1>🍔 완료! 🍟</h1>
-
-            <h2>
-                🎉 ${name} 고객님 주문 나왔어요~
-            </h2>
-
-        </div>
-
-    `;
-
-    document.body.appendChild(screen);
-
-    setTimeout(()=>{
-
-        screen.remove();
-
-    },4000);
-
-}
-
-function speakOrder(name){
-
-    if(!window.speechSynthesis) return;
-
-    const text = `${name} 고객님 주문 나왔어요`;
-
-    const utterance =
-        new SpeechSynthesisUtterance(text);
-
-    utterance.lang = 'ko-KR';
-
-    utterance.rate = 0.9;
-
-    speechSynthesis.speak(utterance);
-
-}
-
-function playBell(){
-
-    try{
-
-        const audio = new Audio(
-            'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3'
-        );
-
-        audio.volume = 1;
-
-        audio.play();
-
-    }catch(e){
-
-        console.log('효과음 실패');
-
-    }
-
-}
-
+function playBell(){ try{ new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3').play(); }catch(e){} }
 </script>
-
 </body>
 </html>
