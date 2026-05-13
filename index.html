@@ -256,7 +256,7 @@
 
 <div id="id-screen">
     <h1>💳 ID 카드를 찍어주세요!</h1>
-    <input type="text" id="barcode-input" placeholder="이름 입력 후 엔터" autofocus>
+    <input type="text" id="barcode-input" placeholder="바코드를 찍어주세요" autofocus>
 </div>
 
 <div id="face-pay-screen">
@@ -322,6 +322,31 @@
 <script>
 
 const KITCHEN_ID = 'jinyeong-burger-kitchen-2026';
+
+// --- [추가] 바코드 번호와 아이들 이름 매칭 데이터 ---
+const childList = {
+    "101": "이우준",
+    "102": "박도준",
+    "103": "신준우",
+    "104": "김주안",
+    "105": "정보겸",
+    "106": "임태현",
+    "107": "정설온",
+    "108": "김유준",
+    "109": "김나윤",
+    "110": "황하영",
+    "111": "김도희",
+    "112": "이다윤",
+    "113": "최아린",
+    "114": "이하윤",
+    "115": "최가경",
+    "116": "박해솔",
+    "117": "박다솔",
+    "118": "이루담",
+    "119": "이채원",
+    "120": "이재빈",
+    // 필요한 만큼 "번호": "이름" 형식으로 추가하세요.
+};
 
 let conn = null;
 let customerName = "";
@@ -390,9 +415,17 @@ function connectToKitchen() {
     });
 }
 
+// --- [수정] 바코드 입력 시 이름을 매칭하는 로직 적용 ---
 document.getElementById('barcode-input')
 .addEventListener('change', (e) => {
-    customerName = e.target.value;
+    const inputVal = e.target.value.trim();
+    
+    // 명단에 번호가 있으면 이름으로 변환, 없으면 입력값 그대로 사용
+    customerName = childList[inputVal] || inputVal;
+    
+    // 아이가 자신임을 확인할 수 있도록 알림창 표시
+    alert(customerName + " 어린이, 환영합니다!");
+    
     document.getElementById('id-screen').style.display = 'none';
     switchTab('burger');
 });
@@ -450,14 +483,12 @@ function clearAll() {
 function updatePositions() {
     const stick = document.getElementById('skewer-stick');
     
-    // 현재 선택된 탭에 쌓인 재료의 개수를 파악
     const currentTabCount = currentRecipe.filter(item => item.tab === currentTab).length;
 
     let burgerIndex = 0;
     let skewerIndex = 0;
     let drinkIndex = 0;
 
-    // 선생님의 원본 위치 설정
     const posConfig = {
         burger: {
             burger:{x:'50%', s:1},
@@ -487,14 +518,12 @@ function updatePositions() {
         const c = config[item.tab];
         const isCurrent = (item.tab === currentTab);
 
-        // [핵심 보완] 한 화면에 들어오도록 동적 스케일 및 간격 계산
         let shrinkFactor = 1.0;
         let responsiveScale = c.s;
 
-        // 재료가 6개 이상 쌓이면 현재 탭의 재료만 크기와 간격을 줄임
         if (isCurrent && currentTabCount > 6) {
-            responsiveScale = c.s * 0.75; // 크기 축소
-            shrinkFactor = 0.65;          // 간격 압축
+            responsiveScale = c.s * 0.75; 
+            shrinkFactor = 0.65;          
         }
 
         el.style.left = c.x;
