@@ -249,6 +249,12 @@
             margin-top: 20px;
             text-align: center;
         }
+
+        /* 조리 완료 화면용 애니메이션 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
     </style>
 </head>
 
@@ -323,29 +329,11 @@
 
 const KITCHEN_ID = 'jinyeong-burger-kitchen-2026';
 
-// --- [추가] 바코드 번호와 아이들 이름 매칭 데이터 ---
 const childList = {
-    "101": "이우준",
-    "102": "박도준",
-    "103": "신준우",
-    "104": "김주안",
-    "105": "정보겸",
-    "106": "임태현",
-    "107": "정설온",
-    "108": "김유준",
-    "109": "김나윤",
-    "110": "황하영",
-    "111": "김도희",
-    "112": "이다윤",
-    "113": "최아린",
-    "114": "이하윤",
-    "115": "최가경",
-    "116": "박해솔",
-    "117": "박다솔",
-    "118": "이루담",
-    "119": "이채원",
-    "120": "이재빈",
-    // 필요한 만큼 "번호": "이름" 형식으로 추가하세요.
+    "101": "이우준", "102": "박도준", "103": "신준우", "104": "김주안", "105": "정보겸",
+    "106": "임태현", "107": "정설온", "108": "김유준", "109": "김나윤", "110": "황하영",
+    "111": "김도희", "112": "이다윤", "113": "최아린", "114": "이하윤", "115": "최가경",
+    "116": "박해솔", "117": "박다솔", "118": "이루담", "119": "이채원", "120": "이재빈"
 };
 
 let conn = null;
@@ -371,7 +359,6 @@ peer.on('error', (err) => {
 });
 
 const menus = {
-
     burger: [
         { id:'bun_bottom', name:'아래빵', icon:'🍞' },
         { id:'patty', name:'패티', icon:'🍖' },
@@ -380,14 +367,12 @@ const menus = {
         { id:'tomato', name:'토마토', icon:'🍅' },
         { id:'bun_top', name:'위빵', icon:'🍞' }
     ],
-
     skewer: [
         { id:'steak', name:'스테이크', icon:'🥩' },
         { id:'shrimp', name:'새우', icon:'🍤' },
         { id:'tomato', name:'방울토마토', icon:'🍅' },
         { id:'pepper', name:'피망', icon:'🫑' }
     ],
-
     drink: [
         { id:'cola', name:'콜라', icon:'🥤' },
         { id:'cider', name:'사이다', icon:'🫧' },
@@ -396,13 +381,17 @@ const menus = {
 };
 
 function connectToKitchen() {
-
-    conn = peer.connect(KITCHEN_ID, {
-        reliable: true
-    });
+    conn = peer.connect(KITCHEN_ID, { reliable: true });
 
     conn.on('open', () => {
         console.log('주방 연결 완료');
+    });
+
+    // 주방에서 오는 완료 신호 처리
+    conn.on('data', (data) => {
+        if (data.type === 'FINISHED') {
+            showFinishedScreen(data.customer);
+        }
     });
 
     conn.on('error', (err) => {
@@ -415,17 +404,11 @@ function connectToKitchen() {
     });
 }
 
-// --- [수정] 바코드 입력 시 이름을 매칭하는 로직 적용 ---
 document.getElementById('barcode-input')
 .addEventListener('change', (e) => {
     const inputVal = e.target.value.trim();
-    
-    // 명단에 번호가 있으면 이름으로 변환, 없으면 입력값 그대로 사용
     customerName = childList[inputVal] || inputVal;
-    
-    // 아이가 자신임을 확인할 수 있도록 알림창 표시
     alert(customerName + " 어린이, 환영합니다!");
-    
     document.getElementById('id-screen').style.display = 'none';
     switchTab('burger');
 });
@@ -434,14 +417,12 @@ function switchTab(tab) {
     currentTab = tab;
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
-
     const menuBar = document.getElementById('menu-bar');
     menuBar.innerHTML = menus[tab].map(m => `
         <button class="btn-ing" onclick="addIng('${m.id}','${m.icon} ${m.name}')">
             ${m.icon}<br>${m.name}
         </button>
     `).join('');
-
     updatePositions();
 }
 
@@ -453,14 +434,7 @@ function addIng(file, name) {
     img.id = uniqueId;
     img.className = 'ing-img';
     area.appendChild(img);
-
-    currentRecipe.push({
-        id: uniqueId,
-        file: file,
-        name: name,
-        tab: currentTab
-    });
-
+    currentRecipe.push({ id: uniqueId, file: file, name: name, tab: currentTab });
     updatePositions();
 }
 
@@ -473,136 +447,81 @@ function undoLast() {
 
 function clearAll() {
     if(!confirm('전부 다시할까요?')) return;
-    currentRecipe.forEach(item => {
-        document.getElementById(item.id)?.remove();
-    });
+    currentRecipe.forEach(item => { document.getElementById(item.id)?.remove(); });
     currentRecipe = [];
     updatePositions();
 }
 
 function updatePositions() {
     const stick = document.getElementById('skewer-stick');
-    
     const currentTabCount = currentRecipe.filter(item => item.tab === currentTab).length;
-
-    let burgerIndex = 0;
-    let skewerIndex = 0;
-    let drinkIndex = 0;
-
+    let burgerIndex = 0; let skewerIndex = 0; let drinkIndex = 0;
     const posConfig = {
-        burger: {
-            burger:{x:'50%', s:1},
-            skewer:{x:'15%', s:0.6},
-            drink:{x:'85%', s:0.6}
-        },
-        skewer: {
-            burger:{x:'15%', s:0.6},
-            skewer:{x:'50%', s:1},
-            drink:{x:'85%', s:0.6}
-        },
-        drink: {
-            burger:{x:'15%', s:0.6},
-            skewer:{x:'85%', s:0.6},
-            drink:{x:'50%', s:1}
-        }
+        burger: { burger:{x:'50%', s:1}, skewer:{x:'15%', s:0.6}, drink:{x:'85%', s:0.6} },
+        skewer: { burger:{x:'15%', s:0.6}, skewer:{x:'50%', s:1}, drink:{x:'85%', s:0.6} },
+        drink: { burger:{x:'15%', s:0.6}, skewer:{x:'85%', s:0.6}, drink:{x:'50%', s:1} }
     };
-
     const config = posConfig[currentTab];
     stick.style.left = config.skewer.x;
     stick.style.opacity = (currentTab === 'skewer') ? "1" : "0.5";
-
     currentRecipe.forEach(item => {
         const el = document.getElementById(item.id);
         if(!el) return;
-
         const c = config[item.tab];
         const isCurrent = (item.tab === currentTab);
-
-        let shrinkFactor = 1.0;
-        let responsiveScale = c.s;
-
-        if (isCurrent && currentTabCount > 6) {
-            responsiveScale = c.s * 0.75; 
-            shrinkFactor = 0.65;          
-        }
-
-        el.style.left = c.x;
-        el.style.transform = `translateX(-50%) scale(${responsiveScale})`;
+        let shrinkFactor = 1.0; let responsiveScale = c.s;
+        if (isCurrent && currentTabCount > 6) { responsiveScale = c.s * 0.75; shrinkFactor = 0.65; }
+        el.style.left = c.x; el.style.transform = `translateX(-50%) scale(${responsiveScale})`;
         el.style.opacity = isCurrent ? "1" : "0.5";
-
-        if(item.tab === 'burger') {
-            el.style.width = '280px';
-            el.style.bottom = `${80 + burgerIndex * (35 * shrinkFactor)}px`;
-            burgerIndex++;
-        }
-        else if(item.tab === 'skewer') {
-            el.style.width = '180px';
-            el.style.bottom = `${110 + skewerIndex * (60 * shrinkFactor)}px`;
-            skewerIndex++;
-        }
-        else if(item.tab === 'drink') {
-            el.style.width = '150px';
-            el.style.bottom = `${80 + drinkIndex * (70 * shrinkFactor)}px`;
-            drinkIndex++;
-        }
+        if(item.tab === 'burger') { el.style.width = '280px'; el.style.bottom = `${80 + burgerIndex * (35 * shrinkFactor)}px`; burgerIndex++; }
+        else if(item.tab === 'skewer') { el.style.width = '180px'; el.style.bottom = `${110 + skewerIndex * (60 * shrinkFactor)}px`; skewerIndex++; }
+        else if(item.tab === 'drink') { el.style.width = '150px'; el.style.bottom = `${80 + drinkIndex * (70 * shrinkFactor)}px`; drinkIndex++; }
     });
-
-    document.getElementById('item-list-content').innerHTML =
-        currentRecipe.map((i, idx) =>
-            `<div>${idx + 1}. ${i.name}</div>`
-        ).join('');
+    document.getElementById('item-list-content').innerHTML = currentRecipe.map((i, idx) => `<div>${idx + 1}. ${i.name}</div>`).join('');
 }
 
 async function startFacePay() {
-    if(currentRecipe.length === 0) {
-        alert('메뉴를 골라주세요!');
-        return;
-    }
+    if(currentRecipe.length === 0) { alert('메뉴를 골라주세요!'); return; }
     const screen = document.getElementById('face-pay-screen');
     const video = document.getElementById('camera-view');
     const bar = document.getElementById('pay-bar');
     screen.style.display = 'flex';
-
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
-    } catch(e) {
-        console.error(e);
-        sendFinalOrder();
-        return;
-    }
-
+    } catch(e) { console.error(e); sendFinalOrder(); return; }
     setTimeout(() => { bar.style.width = '100%'; }, 300);
     setTimeout(() => {
-        if(video.srcObject) {
-            video.srcObject.getTracks().forEach(t => t.stop());
-        }
+        if(video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); }
         sendFinalOrder();
     }, 4000);
 }
 
 function sendFinalOrder() {
-    if(!conn || !conn.open) {
-        alert('주방 연결이 아직 안 되었어요!');
-        connectToKitchen();
-        return;
-    }
+    if(!conn || !conn.open) { alert('주방 연결이 아직 안 되었어요!'); connectToKitchen(); return; }
     const orderData = {
         customer: customerName,
-        fullRecipe: currentRecipe.map(item => ({
-            name: item.name,
-            file: item.file,
-            tab: item.tab
-        }))
+        fullRecipe: currentRecipe.map(item => ({ name: item.name, file: item.file, tab: item.tab }))
     };
     try {
         conn.send(orderData);
-        alert('주문 완료!');
-        location.reload();
-    } catch(e) {
-        console.error(e);
-        alert('전송 오류!');
-    }
+        // 조리 중 화면 띄우기
+        const cookingDiv = document.createElement('div');
+        cookingDiv.id = "cooking-loading-overlay";
+        cookingDiv.style = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #FFFBE6; z-index: 800; display: flex; flex-direction: column; justify-content: center; align-items: center;`;
+        cookingDiv.innerHTML = `<h1 style="font-size: 4rem;">🍳</h1><h2 style="font-size: 2.5rem; color: #F39C12;">지금 요리 중입니다!</h2><p style="font-size: 1.8rem;">${customerName} 어린이, 조금만 기다려주세요.</p><div style="width:300px; height:20px; background:#EEE; border-radius:10px; margin-top:30px; overflow:hidden;"><div style="width:0%; height:100%; background:#F39C12; animation: cookingProgress 15s linear forwards;"></div></div><style>@keyframes cookingProgress { from { width: 0%; } to { width: 100%; } }</style>`;
+        document.body.appendChild(cookingDiv);
+    } catch(e) { console.error(e); alert('전송 오류!'); }
+}
+
+function showFinishedScreen(name) {
+    const overlay = document.getElementById("cooking-loading-overlay");
+    if(overlay) overlay.remove();
+    const finishDiv = document.createElement('div');
+    finishDiv.style = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.95); z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; animation: fadeIn 0.5s;`;
+    finishDiv.innerHTML = `<h1 style="font-size: 5rem;">🎁</h1><h2 style="font-size: 3rem; color: #E67E22;">${name} 어린이!</h2><h2 style="font-size: 2.5rem;">요리가 완료되었습니다!</h2><p style="font-size: 1.5rem; color: #888; margin-top: 20px;">음식을 받으러 와주세요.</p>`;
+    document.body.appendChild(finishDiv);
+    setTimeout(() => { location.reload(); }, 5000);
 }
 
 switchTab('burger');
