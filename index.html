@@ -4,63 +4,201 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>진영 유치원 스마트 키오스크</title>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        body { font-family: 'Nanum Gothic', sans-serif; background: #FFFBE6; margin: 0; text-align: center; overflow: hidden; }
-        #tab-bar { display: flex; background: #F39C12; padding: 10px; gap: 10px; justify-content: center; position: fixed; top: 0; width: 100%; z-index: 150; }
-        .tab-btn { padding: 10px 20px; border: none; border-radius: 20px; background: rgba(255,255,255,0.3); color: white; font-weight: bold; font-size: 1.1em; cursor: pointer; }
-        .tab-btn.active { background: white; color: #F39C12; }
-        #status-list { position: fixed; top: 80px; left: 15px; width: 140px; background: rgba(255,255,255,0.9); border-radius: 20px; padding: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: left; z-index: 100; border: 2px solid #F39C12; max-height: 40vh; overflow-y: auto; }
-        #cooking-area { position: relative; width: 100%; height: 60vh; margin-top: 60px; }
-        #skewer-stick { position: absolute; width: 12px; height: 350px; background: #8D6E63; bottom: 80px; left: 50%; transform: translateX(-50%); border-radius: 10px; z-index: 1; border: 2px solid #5D4037; transition: all 0.5s ease-in-out; }
-        .ing-img { position: absolute; transition: all 0.5s cubic-bezier(0.4,0,0.2,1); animation: dropIn 0.5s ease-out; pointer-events: none; }
-        @keyframes dropIn { from { transform: translate(-50%, -500px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        :root {
+            --primary-blue: #3B5998;
+            --point-yellow: #FFD43B;
+            --bg-soft: #F9F8F3;
+            --text-dark: #333333;
+        }
+
+        body { 
+            font-family: 'Gaegu', 'Nanum Gothic', sans-serif; 
+            background: var(--bg-soft); 
+            margin: 0; 
+            text-align: center; 
+            overflow: hidden; 
+            color: var(--text-dark);
+            font-size: 1.3em;
+        }
+        
+        /* 1. 상단 타이틀 & 탭 바 */
+        #header-area {
+            background: var(--primary-blue);
+            padding: 15px 10px 10px 10px;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 150;
+            border-radius: 0 0 25px 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        #header-area h1 {
+            color: white;
+            margin: 0 0 10px 0;
+            font-size: 1.4em;
+            letter-spacing: 1px;
+        }
+        #tab-bar { display: flex; gap: 10px; justify-content: center; max-width: 90%; margin: 0 auto; }
+        .tab-btn { 
+            flex: 1;
+            padding: 8px 12px; 
+            border: 2px solid rgba(255,255,255,0.4); 
+            border-radius: 18px; 
+            background: rgba(255,255,255,0.15); 
+            color: white; 
+            font-weight: bold; 
+            font-size: 0.9em; 
+            cursor: pointer; 
+            transition: all 0.2s;
+            font-family: 'Gaegu', sans-serif;
+        }
+        .tab-btn.active { background: var(--point-yellow); color: var(--text-dark); border-color: var(--point-yellow); transform: scale(1.05); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+        /* 2. 좌측 주문 리스트 */
+        #status-list { 
+            position: fixed; 
+            top: 150px; 
+            left: 15px; 
+            width: 140px; 
+            background: white; 
+            border-radius: 20px; 
+            padding: 15px; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08); 
+            text-align: left; 
+            z-index: 100; 
+            border: 3px solid var(--primary-blue); 
+            max-height: 35vh; 
+            overflow-y: auto; 
+        }
+        
+        /* 3. 메인 조리 영역 */
+        #cooking-area { position: relative; width: 100%; height: 50vh; margin-top: 140px; }
+        #skewer-stick { position: absolute; width: 14px; height: 320px; background: #8D6E63; bottom: 60px; left: 50%; transform: translateX(-50%); border-radius: 10px; z-index: 1; border: 2px solid #5D4037; transition: all 0.5s ease-in-out; }
+
+        .ing-img { position: absolute; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); animation: dropIn 0.5s ease-out; pointer-events: none; }
+        @keyframes dropIn { from { transform: translateY(-500px) translateX(-50%); opacity: 0; } to { transform: translateY(0) translateX(-50%); opacity: 1; } }
+
+        /* 4. 하단 제어 및 메뉴 패널 */
         #control-panel { position: fixed; bottom: 0; width: 100%; z-index: 150; }
-        #edit-buttons { display: flex; justify-content: center; gap: 10px; margin-bottom: 5px; }
-        .edit-btn { padding: 8px 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: white; font-size: 0.9em; }
-        .undo-btn { background: #95a5a6; }
-        .clear-btn { background: #34495e; }
-        #menu-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 15px; background: white; border-radius: 30px 30px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); }
-        .btn-ing { padding: 12px; border: none; border-radius: 15px; background: #F39C12; color: white; font-weight: bold; font-size: 0.9em; box-shadow: 0 4px 0 #D35400; }
-        .btn-ing:active { transform: translateY(4px); box-shadow: none; }
-        #order-btn { position: fixed; right: 20px; top: 80px; padding: 15px 30px; background: #E74C3C; color: white; border: none; border-radius: 50px; font-size: 1.2em; font-weight: bold; z-index: 160; box-shadow: 0 4px 0 #C0392B; }
-        #face-pay-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 500; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; }
-        #camera-view { width: 300px; height: 300px; border-radius: 50%; border: 5px solid #2ecc71; object-fit: cover; transform: scaleX(-1); }
-        #scan-line { position: absolute; width: 300px; height: 4px; background: #2ecc71; box-shadow: 0 0 15px #2ecc71; animation: scanMove 2s infinite; }
-        @keyframes scanMove { 0% { top: 35%; } 50% { top: 65%; } 100% { top: 35%; } }
-        #pay-progress { width: 300px; height: 15px; background: #333; border-radius: 10px; margin-top: 20px; overflow: hidden; }
-        #pay-bar { width: 0%; height: 100%; background: #2ecc71; transition: width 3s linear; }
-        #id-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 600; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        input { padding: 15px; font-size: 1.2em; border: 2px solid #F39C12; border-radius: 10px; margin-top: 20px; text-align: center; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        #edit-buttons { display: flex; justify-content: center; gap: 12px; margin-bottom: 8px; padding: 0 15px; }
+        .edit-btn { padding: 8px 18px; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; color: white; font-size: 0.85em; box-shadow: 0 4px 0 rgba(0,0,0,0.15); font-family: 'Gaegu', sans-serif;}
+        .undo-btn { background: #E67E22; }
+        .clear-btn { background: #7F8C8D; }
+
+        #menu-bar { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 12px; 
+            padding: 20px; 
+            background: white; 
+            border-radius: 30px 30px 0 0; 
+            box-shadow: 0 -10px 25px rgba(0,0,0,0.08); 
+            border-top: 4px solid var(--point-yellow);
+        }
+        .btn-ing { 
+            padding: 10px; 
+            border: none; 
+            border-radius: 18px; 
+            background: #F8F9FA; 
+            color: var(--text-dark); 
+            font-weight: bold; 
+            font-size: 0.9em; 
+            box-shadow: 0 5px 0 #E2E6EA; 
+            border: 2px solid #E2E6EA;
+            transition: all 0.1s;
+            font-family: 'Gaegu', sans-serif;
+        }
+        .btn-ing:active { transform: translateY(3px); box-shadow: 0 2px 0 #E2E6EA; background: #FFFDEB; }
+
+        #order-btn { 
+            position: fixed; 
+            right: 20px; 
+            top: 150px; 
+            padding: 15px 25px; 
+            background: #FF4757; 
+            color: white; 
+            border: none; 
+            border-radius: 25px; 
+            font-size: 1.1em; 
+            font-weight: bold; 
+            z-index: 160; 
+            box-shadow: 0 6px 12px rgba(255,71,87,0.3);
+            cursor: pointer;
+            font-family: 'Gaegu', sans-serif;
+        }
+        
+        /* 5. 얼굴 인식 결제 화면 */
+        #face-pay-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 500; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; }
+        #camera-container { position: relative; width: 280px; height: 280px; }
+        #camera-view { width: 100%; height: 100%; border-radius: 50%; border: 6px solid var(--point-yellow); object-fit: cover; transform: scaleX(-1); }
+        #scan-line { position: absolute; width: 100%; height: 6px; background: var(--point-yellow); box-shadow: 0 0 20px var(--point-yellow); animation: scanMove 2s infinite; left: 0; }
+        @keyframes scanMove { 0% { top: 10%; } 50% { top: 90%; } 100% { top: 10%; } }
+        #pay-progress { width: 280px; height: 16px; background: #444; border-radius: 10px; margin-top: 25px; overflow: hidden; border: 2px solid #555; }
+        #pay-bar { width: 0%; height: 100%; background: var(--point-yellow); transition: width 3.5s linear; }
+
+        /* ID 스캔 첫 화면 */
+        #id-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-soft); z-index: 600; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #id-card-box { background: white; padding: 40px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 4px dashed var(--primary-blue); text-align: center; max-width: 80%; }
+        input { padding: 15px; font-size: 1.1em; border: 3px solid var(--primary-blue); border-radius: 15px; margin-top: 20px; text-align: center; width: 80%; font-family: 'Gaegu', sans-serif; }
+        
+        /* 영수증 모달 디자인 */
+        #receipt-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 700; display: none; justify-content: center; align-items: center; }
+        .receipt-box { background: white; width: 300px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; border-top: 8px solid var(--primary-blue); position: relative; }
+        .receipt-box::after { content: ''; display: block; position: absolute; bottom: -10px; left: 0; width: 100%; height: 10px; background: linear-gradient(-45deg, white 5px, transparent 0), linear-gradient(45deg, white 5px, transparent 0); background-size: 10px 10px; }
+        .receipt-title { font-size: 1.3em; color: var(--primary-blue); font-weight: bold; margin-bottom: 10px; }
+        .receipt-line { border-top: 2px dashed #CCC; margin: 15px 0; }
+        .receipt-close-btn { background: var(--primary-blue); color: white; border: none; padding: 10px 30px; border-radius: 15px; font-size: 1em; font-family: 'Gaegu', sans-serif; margin-top: 15px; cursor: pointer; width: 100%; }
     </style>
 </head>
 <body>
 
 <div id="id-screen">
-    <h1>💳 ID 카드를 찍어주세요!</h1>
-    <input type="text" id="barcode-input" placeholder="바코드를 찍어주세요" autofocus>
+    <div id="id-card-box">
+        <h1 style="font-size: 1.8em; margin: 0; color: var(--primary-blue);">💳 스마트 키오스크</h1>
+        <p style="margin-top: 10px; color: #666;">진영 유치원 ID 카드를 찍어주세요!</p>
+        <input type="text" id="barcode-input" placeholder="바코드 인식 대기 중..." autofocus>
+    </div>
 </div>
 
 <div id="face-pay-screen">
-    <div id="scan-line"></div>
-    <video id="camera-view" autoplay playsinline></video>
-    <h2 style="margin-top:20px;">얼굴을 동그라미에 맞춰주세요</h2>
+    <div id="camera-container">
+        <div id="scan-line"></div>
+        <video id="camera-view" autoplay playsinline></video>
+    </div>
+    <h2 id="pay-status-text" style="margin-top:25px; font-size: 1.3em; color: var(--point-yellow);">반짝반짝! 얼굴을 맞춰주세요 🌟</h2>
     <div id="pay-progress"><div id="pay-bar"></div></div>
 </div>
 
-<div id="tab-bar">
-    <button id="tab-burger" class="tab-btn active" onclick="switchTab('burger')">🍔 햄버거</button>
-    <button id="tab-skewer" class="tab-btn" onclick="switchTab('skewer')">🍢 꼬치집</button>
-    <button id="tab-drink" class="tab-btn" onclick="switchTab('drink')">🥤 음료수</button>
+<div id="receipt-modal">
+    <div class="receipt-box">
+        <div class="receipt-title">🎫 진영 스마트 영수증</div>
+        <div style="font-size: 0.9em; color:#777;" id="receipt-date"></div>
+        <div class="receipt-line"></div>
+        <h3 style="margin: 5px 0;" id="receipt-user"></h3>
+        <p style="color: #E67E22; font-weight: bold; margin: 5px 0;">주문이 주방으로 전송되었습니다!</p>
+        <div class="receipt-line"></div>
+        <button class="receipt-close-btn" onclick="closeReceiptAndReload()">확인 완료 👍</button>
+    </div>
+</div>
+
+<div id="header-area">
+    <h1>진영 마켓</h1>
+    <div id="tab-bar">
+        <button id="tab-burger" class="tab-btn active" onclick="switchTab('burger')">🍔 햄버거</button>
+        <button id="tab-skewer" class="tab-btn" onclick="switchTab('skewer')">🍢 꼬치집</button>
+        <button id="tab-drink" class="tab-btn" onclick="switchTab('drink')">🥤 음료수</button>
+    </div>
 </div>
 
 <div id="status-list">
-    <strong style="color:#F39C12; font-size:0.8em;">📋 주문 목록</strong>
-    <div id="item-list-content" style="font-size:0.75em; margin-top:5px;"></div>
+    <strong style="color: var(--primary-blue); font-size: 0.9em; display: block; border-bottom: 2px solid #EEE; padding-bottom: 5px; margin-bottom: 5px;">📋 담은 주머니</strong>
+    <div id="item-list-content" style="font-size: 0.8em; line-height: 1.4;"></div>
 </div>
 
-<button id="order-btn" onclick="startFacePay()">주문완료 ➔</button>
+<button id="order-btn" onclick="startFacePay()">주문 완료 ➔</button>
 
 <div id="cooking-area">
     <div id="skewer-stick"></div>
@@ -68,158 +206,206 @@
 
 <div id="control-panel">
     <div id="edit-buttons">
-        <button class="edit-btn undo-btn" onclick="undoLast()">↩ 재료 하나 빼기</button>
-        <button class="edit-btn clear-btn" onclick="clearAll()">🗑 전부 다시하기</button>
+        <button class="edit-btn undo-btn" onclick="undoLast()">↩ 하나 빼기</button>
+        <button class="edit-btn clear-btn" onclick="clearAll()">🗑 다 지우기</button>
     </div>
     <div id="menu-bar"></div>
 </div>
 
 <script>
-const KITCHEN_ID = 'jinyeong-burger-kitchen-2026';
-const childList = {
-    "101": "이우준", "102": "박도준", "103": "신준우", "104": "김주안", "105": "정보겸",
-    "106": "임태현", "107": "정설온", "108": "김유준", "109": "김나윤", "110": "황하영",
-    "111": "김도희", "112": "이다윤", "113": "최아린", "114": "이하윤", "115": "최가경",
-    "116": "박해솔", "117": "박다솔", "118": "이루담", "119": "이채원", "120": "이재빈"
-};
+    let peer = new Peer();
+    let conn;
+    let currentRecipe = [];
+    let currentTab = 'burger';
+    let customerName = "";
 
-let conn = null;
-let customerName = "";
-let currentRecipe = [];
-let currentTab = 'burger';
+    const menus = {
+        burger: [
+            { id: 'bun_bottom', name: '아래빵', icon: '🍞' },
+            { id: 'patty', name: '패티', icon: '🍖' },
+            { id: 'lettuce', name: '양상추', icon: '🥬' },
+            { id: 'cheese', name: '치즈', icon: '🧀' },
+            { id: 'tomato', name: '토마토', icon: '🍅' },
+            { id: 'bun_top', name: '위빵', icon: '🍞' }
+        ],
+        skewer: [
+            { id: 'steak', name: '스테이크', icon: '🥩' },
+            { id: 'shrimp', name: '새우', icon: '🍤' },
+            { id: 'tomato', name: '방울토마토', icon: '🍅' },
+            { id: 'pepper', name: '피망', icon: '🫑' }
+        ],
+        drink: [
+            { id: 'cola', name: '콜라', icon: '🥤' },
+            { id: 'cider', name: '사이다', icon: '🫧' },
+            { id: 'juice', name: '주스', icon: '🧃' }
+        ]
+    };
 
-const peer = new Peer({ host: '0.peerjs.com', secure: true, port: 443, debug: 2 });
-peer.on('open', (id) => { connectToKitchen(); });
+    peer.on('open', () => { conn = peer.connect('jinyeong-burger-kitchen-2026'); });
 
-function connectToKitchen() {
-    conn = peer.connect(KITCHEN_ID, { reliable: true });
-    conn.on('data', (data) => {
-        if (data.type === 'FINISHED') {
-            showFinishedScreen(data.customer);
-        }
+    document.getElementById('barcode-input').addEventListener('change', (e) => {
+        customerName = e.target.value;
+        document.getElementById('id-screen').style.display = 'none';
+        switchTab('burger');
     });
-    conn.on('close', () => { setTimeout(connectToKitchen, 3000); });
-}
 
-document.getElementById('barcode-input').addEventListener('change', (e) => {
-    const inputVal = e.target.value.trim();
-    customerName = childList[inputVal] || inputVal;
-    alert(customerName + " 어린이, 환영합니다!");
-    document.getElementById('id-screen').style.display = 'none';
-    switchTab('burger');
-});
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        updatePositions();
 
-function switchTab(tab) {
-    currentTab = tab;
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
-    const menuBar = document.getElementById('menu-bar');
-    menuBar.innerHTML = menus[tab].map(m => `
-        <button class="btn-ing" onclick="addIng('${m.id}','${m.icon} ${m.name}')">${m.icon}<br>${m.name}</button>
-    `).join('');
-    updatePositions();
-}
-
-const menus = {
-    burger: [{id:'bun_bottom',name:'아래빵',icon:'🍞'},{id:'patty',name:'패티',icon:'🍖'},{id:'lettuce',name:'양상추',icon:'🥬'},{id:'cheese',name:'치즈',icon:'🧀'},{id:'tomato',name:'토마토',icon:'🍅'},{id:'bun_top',name:'위빵',icon:'🍞'}],
-    skewer: [{id:'steak',name:'스테이크',icon:'🥩'},{id:'shrimp',name:'새우',icon:'🍤'},{id:'tomato',name:'방울토마토',icon:'🍅'},{id:'pepper',name:'피망',icon:'🫑'}],
-    drink: [{id:'cola',name:'콜라',icon:'🥤'},{id:'cider',name:'사이다',icon:'🫧'},{id:'juice',name:'주스',icon:'🧃'}]
-};
-
-function addIng(file, name) {
-    const area = document.getElementById('cooking-area');
-    const uniqueId = 'ing-' + Date.now();
-    const img = document.createElement('img');
-    img.src = `${file}.png`; img.id = uniqueId; img.className = 'ing-img';
-    area.appendChild(img);
-    currentRecipe.push({ id: uniqueId, file: file, name: name, tab: currentTab });
-    updatePositions();
-}
-
-function undoLast() {
-    if(currentRecipe.length === 0) return;
-    const last = currentRecipe.pop();
-    document.getElementById(last.id)?.remove();
-    updatePositions();
-}
-
-function clearAll() {
-    if(!confirm('전부 다시할까요?')) return;
-    currentRecipe.forEach(item => { document.getElementById(item.id)?.remove(); });
-    currentRecipe = [];
-    updatePositions();
-}
-
-function updatePositions() {
-    const stick = document.getElementById('skewer-stick');
-    const currentTabCount = currentRecipe.filter(item => item.tab === currentTab).length;
-    let bIdx = 0; let sIdx = 0; let dIdx = 0;
-    const config = {
-        burger: { burger:{x:'50%',s:1}, skewer:{x:'15%',s:0.6}, drink:{x:'85%',s:0.6} },
-        skewer: { burger:{x:'15%',s:0.6}, skewer:{x:'50%',s:1}, drink:{x:'85%',s:0.6} },
-        drink: { burger:{x:'15%',s:0.6}, skewer:{x:'85%',s:0.6}, drink:{x:'50%',s:1} }
-    }[currentTab];
-    stick.style.left = config.skewer.x; stick.style.opacity = (currentTab === 'skewer') ? "1" : "0.5";
-    currentRecipe.forEach(item => {
-        const el = document.getElementById(item.id); if(!el) return;
-        const c = config[item.tab]; const isCurr = (item.tab === currentTab);
-        let sF = 1.0; let rS = c.s;
-        if (isCurr && currentTabCount > 6) { rS = c.s * 0.75; sF = 0.65; }
-        el.style.left = c.x; el.style.transform = `translateX(-50%) scale(${rS})`; el.style.opacity = isCurr ? "1" : "0.5";
-        if(item.tab === 'burger') { el.style.width='280px'; el.style.bottom=`${80+bIdx*(35*sF)}px`; bIdx++; }
-        else if(item.tab === 'skewer') { el.style.width='180px'; el.style.bottom=`${110+sIdx*(60*sF)}px`; sIdx++; }
-        else if(item.tab === 'drink') { el.style.width='150px'; el.style.bottom=`${80+dIdx*(70*sF)}px`; dIdx++; }
-    });
-    document.getElementById('item-list-content').innerHTML = currentRecipe.map((i,idx)=>`<div>${idx+1}. ${i.name}</div>`).join('');
-}
-
-async function startFacePay() {
-    if(currentRecipe.length === 0) { alert('메뉴를 골라주세요!'); return; }
-    const screen = document.getElementById('face-pay-screen');
-    const bar = document.getElementById('pay-bar');
-    screen.style.display = 'flex';
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        document.getElementById('camera-view').srcObject = stream;
-    } catch(e) { sendFinalOrder(); return; }
-    setTimeout(() => { bar.style.width = '100%'; }, 300);
-    setTimeout(() => {
-        const stream = document.getElementById('camera-view').srcObject;
-        if(stream) stream.getTracks().forEach(t => t.stop());
-        sendFinalOrder();
-    }, 4000);
-}
-
-function sendFinalOrder() {
-    if(!conn || !conn.open) { alert('주방 연결 확인 중...'); connectToKitchen(); return; }
-    conn.send({ customer: customerName, fullRecipe: currentRecipe.map(i => ({name:i.name, file:i.file, tab:i.tab})) });
-    
-    // 조리 중 화면 표시
-    const cookingDiv = document.createElement('div');
-    cookingDiv.id = "cooking-overlay";
-    cookingDiv.style = `position:fixed; top:0; left:0; width:100%; height:100%; background:#FFFBE6; z-index:800; display:flex; flex-direction:column; justify-content:center; align-items:center;`;
-    cookingDiv.innerHTML = `<h1 style="font-size:4rem;">🍳</h1><h2 style="font-size:2.5rem; color:#F39C12;">지금 요리 중입니다!</h2><p style="font-size:1.8rem;">${customerName} 어린이, 조금만 기다려주세요.</p><div style="width:300px; height:20px; background:#EEE; border-radius:10px; margin-top:30px; overflow:hidden;"><div style="width:0%; height:100%; background:#F39C12; animation:p 15s linear forwards;"></div></div><style>@keyframes p {from{width:0%;} to{width:100%;}}</style>`;
-    document.body.appendChild(cookingDiv);
-}
-
-function showFinishedScreen(name) {
-    const overlay = document.getElementById("cooking-overlay");
-    if(overlay) overlay.remove();
-    const finishDiv = document.createElement('div');
-    finishDiv.style = `position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:1000; display:flex; flex-direction:column; justify-content:center; align-items:center; animation:fadeIn 0.5s;`;
-    finishDiv.innerHTML = `<h1 style="font-size:5rem;">🎁</h1><h2 style="font-size:3rem; color:#E67E22;">${name} 어린이!</h2><h2 style="font-size:2.5rem;">요리가 완료되었습니다!</h2><p style="font-size:1.5rem; color:#888; margin-top:20px;">음식을 받으러 와주세요.</p>`;
-    document.body.appendChild(finishDiv);
-    
-    // [추가] 요리 완료 음성 안내
-    if(window.speechSynthesis) {
-        const msg = new SpeechSynthesisUtterance(`${name} 어린이, 요리가 완료되었습니다. 음식을 받으러 오세요!`);
-        msg.lang = 'ko-KR'; msg.rate = 0.9;
-        window.speechSynthesis.speak(msg);
+        const menuBar = document.getElementById('menu-bar');
+        menuBar.innerHTML = menus[tab].map(m => `
+            <button class="btn-ing" onclick="addIng('${m.id}', '${m.icon} ${m.name}')">
+                <span style="font-size:1.4em; display:block; margin-bottom:3px;">${m.icon}</span>${m.name}
+            </button>
+        `).join('');
     }
-    
-    setTimeout(() => { location.reload(); }, 6000);
-}
-switchTab('burger');
+
+    function addIng(file, name) {
+        const area = document.getElementById('cooking-area');
+        const uniqueId = 'ing-' + Date.now();
+        const img = document.createElement('img');
+        img.src = `${file}.png`;
+        img.id = uniqueId;
+        img.className = 'ing-img';
+        currentRecipe.push({ id: uniqueId, name: name, file: file, tab: currentTab });
+        area.appendChild(img);
+        updatePositions();
+    }
+
+    function undoLast() {
+        if (currentRecipe.length === 0) return;
+        const lastItem = currentRecipe.pop();
+        const el = document.getElementById(lastItem.id);
+        if (el) el.remove();
+        updatePositions();
+    }
+
+    function clearAll() {
+        if (currentRecipe.length === 0) return;
+        currentRecipe.forEach(item => document.getElementById(item.id)?.remove());
+        currentRecipe = [];
+        updatePositions();
+    }
+
+    // 🔥 자동 크기 조절 기능이 결합된 핵심 위치 업데이트 함수
+    function updatePositions() {
+        const bStick = document.getElementById('skewer-stick');
+        let bIdx = 0, sIdx = 0, dIdx = 0;
+
+        const posConfig = {
+            burger: { burger: {x:'50%', s:1}, skewer: {x:'18%', s:0.55}, drink: {x:'82%', s:0.55} },
+            skewer: { skewer: {x:'50%', s:1}, burger: {x:'18%', s:0.55}, drink: {x:'82%', s:0.55} },
+            drink: { drink: {x:'50%', s:1}, burger: {x:'18%', s:0.55}, skewer: {x:'82%', s:0.55} }
+        };
+
+        const config = posConfig[currentTab];
+        bStick.style.left = config.skewer.x;
+        bStick.style.transform = `translateX(-50%) scale(${config.skewer.s})`;
+        bStick.style.opacity = (currentTab === 'skewer') ? 1 : 0.4;
+
+        // 현재 각각 몇 개씩 쌓였는지 체크
+        const counts = { burger: 0, skewer: 0, drink: 0 };
+        currentRecipe.forEach(item => counts[item.tab]++);
+
+        const baseGap = { burger: 32, skewer: 55, drink: 65 };
+        
+        // 특정 개수가 넘어가면 축소 비율 계산 (재료가 늘어날수록 비율이 촘촘하게 작아짐)
+        const shrinkBurger = counts.burger > 6 ? (6 / counts.burger) : 1;
+        const shrinkSkewer = counts.skewer > 5 ? (5 / counts.skewer) : 1;
+        const shrinkDrink  = counts.drink > 4 ? (4 / counts.drink) : 1;
+
+        currentRecipe.forEach((item) => {
+            const el = document.getElementById(item.id);
+            if (!el) return;
+            const c = config[item.tab];
+            
+            let finalScale = c.s;
+            let currentGap = baseGap[item.tab] * c.s;
+
+            if (item.tab === 'burger') {
+                finalScale *= shrinkBurger;
+                currentGap *= shrinkBurger;
+                
+                el.style.width = '240px';
+                el.style.left = c.x;
+                el.style.transform = `translateX(-50%) scale(${finalScale})`;
+                el.style.bottom = `${60 + (bIdx * currentGap)}px`;
+                el.style.zIndex = bIdx + (item.tab === currentTab ? 100 : 10);
+                bIdx++;
+            } 
+            else if (item.tab === 'skewer') {
+                finalScale *= shrinkSkewer;
+                currentGap *= shrinkSkewer;
+                
+                el.style.width = '160px';
+                el.style.left = c.x;
+                el.style.transform = `translateX(-50%) scale(${finalScale})`;
+                el.style.bottom = `${90 + (sIdx * currentGap)}px`;
+                el.style.zIndex = sIdx + (item.tab === currentTab ? 100 : 10);
+                sIdx++;
+            } 
+            else if (item.tab === 'drink') {
+                finalScale *= shrinkDrink;
+                currentGap *= shrinkDrink;
+                
+                el.style.width = '130px';
+                el.style.left = c.x;
+                el.style.transform = `translateX(-50%) scale(${finalScale})`;
+                el.style.bottom = `${60 + (dIdx * currentGap)}px`;
+                el.style.zIndex = dIdx + (item.tab === currentTab ? 100 : 10);
+                dIdx++;
+            }
+
+            el.style.opacity = (item.tab === currentTab) ? 1 : 0.5;
+        });
+
+        document.getElementById('item-list-content').innerHTML = currentRecipe.map((i, idx) => `<div>${idx+1}. ${i.name}</div>`).join('');
+    }
+
+    async function startFacePay() {
+        if (currentRecipe.length === 0) return;
+        const screen = document.getElementById('face-pay-screen');
+        const video = document.getElementById('camera-view');
+        const bar = document.getElementById('pay-bar');
+
+        screen.style.display = 'flex';
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+        } catch (e) {
+            sendFinalOrder();
+            return;
+        }
+
+        setTimeout(() => { bar.style.width = '100%'; }, 200);
+
+        setTimeout(() => {
+            if(video.srcObject) {
+                video.srcObject.getTracks().forEach(t => t.stop());
+            }
+            sendFinalOrder();
+        }, 3800);
+    }
+
+    function sendFinalOrder() {
+        if (conn) {
+            conn.send({ customer: customerName, recipe: currentRecipe.map(i => i.name) });
+        }
+        
+        document.getElementById('face-pay-screen').style.display = 'none';
+        
+        const now = new Date();
+        document.getElementById('receipt-date').innerText = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        document.getElementById('receipt-user').innerText = `👤 ${customerName} 어린이 친구`;
+        document.getElementById('receipt-modal').style.display = 'flex';
+    }
+
+    function closeReceiptAndReload() {
+        location.reload();
+    }
 </script>
 </body>
 </html>

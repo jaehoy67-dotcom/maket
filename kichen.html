@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>주방용 모니터</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        body { background: #333; color: white; font-family: 'Nanum Gothic', sans-serif; padding: 20px; }
+        .order-card { background: white; color: #333; padding: 20px; border-radius: 20px; margin-bottom: 20px; border-left: 10px solid #F39C12; }
+        .recipe-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        .step { background: #EEE; padding: 10px 15px; border-radius: 10px; font-weight: bold; border: 2px solid #DDD; }
+        .done-btn { background: #27AE60; color: white; border: none; padding: 15px; border-radius: 10px; margin-top: 15px; width: 100%; font-size: 1.1em; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>👨‍🍳 주방 주문 현황</h1>
+    <div id="order-list"></div>
+
+<script>
+    // 주방 전용 고정 아이디 생성
+    const peer = new Peer('jinyeong-burger-kitchen-2026');
+    const orderList = document.getElementById('order-list');
+
+    peer.on('connection', (conn) => {
+        conn.on('data', (data) => {
+            // 주문 데이터 수신 시 카드 생성
+            const card = document.createElement('div');
+            card.className = 'order-card';
+            card.innerHTML = `
+                <h2>🎈 ${data.customer} 친구의 주문</h2>
+                <div class="recipe-list">
+                    ${data.recipe.map((r, i) => `<div class="step">${i+1}. ${r}</div>`).join('')}
+                </div>
+                <button class="done-btn" onclick="this.parentElement.remove()">✅ 조리 완료</button>
+            `;
+            orderList.appendChild(card);
+            
+            // 벨소리나 알림음 추가 가능
+            const audio = new Audio('https://t1.daumcdn.net/cfile/tistory/99412B355A38B17305?original');
+            audio.play();
+        });
+    });
+</script>
+</body>
+</html>
