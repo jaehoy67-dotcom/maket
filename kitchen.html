@@ -1,234 +1,135 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<title>주방용 모니터 시스템</title>
+    <meta charset="UTF-8">
+    <title>주방용 모니터 시스템</title>
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        body { 
+            background: #2C3E50; 
+            color: white; 
+            font-family: 'Gaegu', 'Nanum Gothic', sans-serif; 
+            padding: 20px;
+            margin: 0;
+            font-size: 1.4em;
+        }
+        #status-bar {
+            padding: 12px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+        .status-waiting { color: #FFD43B; border: 2px solid #FFD43B; background: #34495E; }
+        .status-ready { color: #2ECC71; border: 2px solid #2ECC71; background: #1E3024; }
+        .status-connected { color: #3498DB; border: 2px solid #3498DB; background: #1A2A3A; }
 
-<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
-
-<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
-<style>
-
-body{
-    background:#2C3E50;
-    color:white;
-    font-family:'Gaegu','Nanum Gothic',sans-serif;
-    padding:30px;
-    margin:0;
-    font-size:1.4em;
-}
-
-h1{
-    text-align:center;
-    color:#FFD43B;
-    font-size:2em;
-    margin-bottom:10px;
-}
-
-#server-status{
-    text-align:center;
-    margin-bottom:25px;
-    font-size:0.9em;
-}
-
-#order-list{
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
-    gap:20px;
-    max-width:1200px;
-    margin:0 auto;
-}
-
-.order-card{
-    background:white;
-    color:#333;
-    padding:25px;
-    border-radius:25px;
-    box-shadow:0 10px 20px rgba(0,0,0,0.15);
-    border-top:10px solid #3B5998;
-    animation:popIn 0.3s ease-out;
-}
-
-@keyframes popIn{
-    from{
-        transform:scale(0.9);
-        opacity:0;
-    }
-
-    to{
-        transform:scale(1);
-        opacity:1;
-    }
-}
-
-.order-card h2{
-    margin:0 0 15px 0;
-    color:#3B5998;
-}
-
-.recipe-list{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-}
-
-.step{
-    background:#F8F9FA;
-    padding:8px 15px;
-    border-radius:12px;
-    font-weight:bold;
-}
-
-.done-btn{
-    margin-top:18px;
-    width:100%;
-    background:#2ECC71;
-    color:white;
-    border:none;
-    padding:12px;
-    border-radius:15px;
-    font-size:1em;
-    font-family:'Gaegu',sans-serif;
-    cursor:pointer;
-}
-
-</style>
+        h1 {
+            text-align: center;
+            color: #FFD43B;
+            font-size: 2em;
+            margin-bottom: 30px;
+            text-shadow: 0 3px 6px rgba(0,0,0,0.2);
+        }
+        #order-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .order-card { 
+            background: white; 
+            color: #333; 
+            padding: 20px; 
+            border-radius: 15px; 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-top: 8px solid #E74C3C;
+        }
+        .order-card h2 { margin: 0 0 15px 0; font-size: 1.3em; color: #2C3E50; }
+        .recipe-list { background: #F8F9FA; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
+        .step { margin: 5px 0; font-size: 0.95em; }
+        .done-btn {
+            background: #2ECC71;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-family: 'Gaegu', sans-serif;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .done-btn:hover { background: #27AE60; transform: scale(1.02); }
+    </style>
 </head>
-
 <body>
 
-<h1>👨‍🍳 진영 주방 주문 접수 현황</h1>
-
-<div id="server-status">
-🟡 서버 시작 중...
-</div>
-
-<div id="order-list"></div>
+    <div id="status-bar" class="status-waiting">📡 주방 서버 통신망 구축 중...</div>
+    <h1>👨‍🍳 진영 주방 주문 접수 현황</h1>
+    <div id="order-list"></div>
 
 <script>
+    const statusBar = document.getElementById('status-bar');
+    const orderList = document.getElementById('order-list');
 
-const orderList = document.getElementById('order-list');
-const statusText = document.getElementById('server-status');
-
-let peer;
-
-startKitchenServer();
-
-function startKitchenServer(){
-
-    peer = new Peer(
-        'jinyeong-burger-kitchen-2026',
-        {
-            debug:1
-        }
-    );
-
-    peer.on('open', (id)=>{
-
-        console.log('주방 서버 시작:', id);
-
-        statusText.innerHTML =
-            '🟢 주문 수신 대기 중';
-    });
-
-    peer.on('connection', handleConnection);
-
-    peer.on('disconnected', ()=>{
-
-        console.log('Peer 연결 끊김');
-
-        statusText.innerHTML =
-            '🔴 연결 끊김 → 재연결 중';
-
-        try{
-            peer.reconnect();
-        }catch(e){
-            console.log(e);
+    // 🛠 구글 공식 다이렉트 브릿지 통신망(STUN)으로 연동 방식 완전 전향
+    const peer = new Peer('jinyeong-burger-kitchen-2026', {
+        debug: 1,
+        config: {
+            'iceServers': [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
+            ]
         }
     });
 
-    peer.on('close', ()=>{
-
-        console.log('Peer 종료');
-
-        statusText.innerHTML =
-            '🔴 서버 재시작 중';
-
-        setTimeout(()=>{
-            startKitchenServer();
-        },2000);
+    peer.on('open', (id) => {
+        statusBar.innerText = "🟢 주방 오픈! 손님(키오스크)을 기다리는 중입니다...";
+        statusBar.className = "status-ready";
     });
 
-    peer.on('error', (err)=>{
+    peer.on('connection', (conn) => {
+        statusBar.innerText = "🤝 키오스크 연결 완료! 실시간 주문 접수가 가능합니다.";
+        statusBar.className = "status-connected";
+        
+        conn.on('close', () => {
+            statusBar.innerText = "🟢 주방 오픈! 손님(키오스크)을 기다리는 중입니다...";
+            statusBar.className = "status-ready";
+        });
 
-        console.log('Peer 오류:', err);
-
-        statusText.innerHTML =
-            '🔴 서버 오류 발생';
-    });
-}
-
-function handleConnection(conn){
-
-    console.log('키오스크 연결됨');
-
-    conn.on('data', (data)=>{
-
-        console.log('주문 수신:', data);
-
-        addOrderCard(data);
-
-        playSound();
-    });
-
-    conn.on('close', ()=>{
-
-        console.log('키오스크 연결 종료');
-    });
-}
-
-function addOrderCard(data){
-
-    const card = document.createElement('div');
-
-    card.className = 'order-card';
-
-    card.innerHTML = `
-        <div>
-            <h2>🎈 ${data.customer} 어린이 주문</h2>
-
-            <div class="recipe-list">
-                ${data.recipe.map(r=>`
-                    <div class="step">
-                        🔹 ${r}
+        conn.on('data', (data) => {
+            const card = document.createElement('div');
+            card.className = 'order-card';
+            card.innerHTML = `
+                <div>
+                    <h2>🎈 ${data.customer} 어린이 주문</h2>
+                    <div class="recipe-list">
+                        ${data.recipe.map(r => `<div class="step">🔹 ${r}</div>`).join('')}
                     </div>
-                `).join('')}
-            </div>
-        </div>
+                </div>
+                <button class="done-btn" onclick="this.parentElement.remove()">✅ 조리 완료</button>
+            `;
+            orderList.appendChild(card);
+            
+            const audio = new Audio('https://t1.daumcdn.net/cfile/tistory/99412B355A38B17305?original');
+            audio.play().catch(e => console.log("오디오 재생 차단 해제 대기"));
+        });
+    });
 
-        <button class="done-btn">
-            ✅ 조리 완료
-        </button>
-    `;
-
-    card.querySelector('.done-btn').onclick = ()=>{
-        card.remove();
-    };
-
-    orderList.prepend(card);
-}
-
-function playSound(){
-
-    const audio = new Audio(
-        'https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg'
-    );
-
-    audio.play().catch(()=>{});
-}
-
+    peer.on('error', (err) => {
+        statusBar.innerText = "❌ 연결 지연 발생. 새로고침을 해주세요.";
+        statusBar.className = "status-waiting";
+    });
 </script>
-
 </body>
 </html>
