@@ -18,23 +18,11 @@
 
         body { 
             font-family: 'Gaegu', 'Nanum Gothic', sans-serif; 
-            background: var(--bg-soft); 
-            text-align: center; 
-            color: var(--text-dark);
-            font-size: 1.2em;
-            user-select: none;
-            -webkit-user-select: none;
-            display: flex;
-            flex-direction: column;
+            background: var(--bg-soft); text-align: center; color: var(--text-dark);
+            font-size: 1.2em; user-select: none; -webkit-user-select: none; display: flex; flex-direction: column;
         }
         
-        #header-area {
-            background: var(--primary-blue);
-            padding: 10px;
-            color: white;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            flex-shrink: 0;
-        }
+        #header-area { background: var(--primary-blue); padding: 10px; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); flex-shrink: 0; }
         #header-area h1 { margin: 0 0 8px 0; font-size: 1.5em; color: var(--point-yellow); letter-spacing: 1px; }
         
         .tab-bar { display: flex; justify-content: center; gap: 12px; }
@@ -85,26 +73,14 @@
         .fullscreen-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; }
         #id-screen input { font-size: 1.5em; padding: 12px; text-align: center; border-radius: 15px; border: 4px solid var(--point-yellow); width: 280px; margin-top: 20px; font-family: 'Gaegu', sans-serif; }
         
-        /* 🛠 얼굴 인식 화면 기존의 귀여운 동그라미 칸으로 100% 복구 */
-        #camera-container {
-            position: relative;
-            width: 280px;
-            height: 280px;
-            border-radius: 50%;
-            border: 5px solid white;
-            overflow: hidden;
-            box-shadow: 0 0 20px rgba(255,255,255,0.5);
-            background: #000;
-        }
+        #camera-container { position: relative; width: 280px; height: 280px; border-radius: 50%; border: 5px solid white; overflow: hidden; box-shadow: 0 0 20px rgba(255,255,255,0.5); background: #000; }
         #camera-view { width: 100%; height: 100%; transform: rotateY(180deg); object-fit: cover; }
         
         #pay-progress-container { width: 320px; height: 15px; background: #555; border-radius: 10px; margin-top: 25px; overflow: hidden; }
         #pay-bar { width: 0%; height: 100%; background: #2ECC71; }
-        
-        /* 채워지는 부드러운 애니메이션 스타일 클래스 선언 */
         .start-fill { transition: width 3.6s linear !important; width: 100% !important; }
 
-        .modal-box { background: white; color: #333; padding: 25px; border-radius: 25px; width: 300px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
+        .modal-box { background: white; color: #333; padding: 25px; border-radius: 25px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
         .receipt-line { display: flex; justify-content: space-between; margin: 8px 0; font-size: 0.9em; }
     </style>
 </head>
@@ -118,22 +94,22 @@
 
     <div id="face-pay-screen" class="fullscreen-overlay" style="display: none;">
         <h2 id="pay-title" style="font-size: 1.6em; color: var(--point-yellow); margin-bottom: 15px;">🔍 동그라미 안에 얼굴을 보여주세요!</h2>
-        <div id="camera-container">
-            <video id="camera-view" autoplay playsinline></video>
-        </div>
+        <div id="camera-container"><video id="camera-view" autoplay playsinline></video></div>
         <div id="pay-progress-container"><div id="pay-bar"></div></div>
         <p id="pay-status-text" style="margin-top: 15px; color: #FFD43B; font-weight: bold; font-size: 1.1em;">🙂 얼굴 탐색 중...</p>
     </div>
 
     <div id="receipt-modal" class="fullscreen-overlay" style="display: none;">
         <div class="modal-box">
-            <h2 style="color: var(--primary-blue); margin-top:0;">🧾 주문 영수증</h2>
-            <p style="font-size:0.85em; color:#777; margin:-10px 0 15px 0;" id="receipt-date">2026-00-00 00:00</p>
-            <div style="border-top: 2px dashed #DDD; border-bottom: 2px dashed #DDD; padding: 15px 0; margin-bottom: 20px; text-align: left;">
-                <div class="receipt-line"><span style="font-weight: bold;" id="receipt-user">👤 어린이</span><span>주문 완료</span></div>
-                <div class="receipt-line" style="color: #777; font-size: 0.8em;">* 주방 모니터로 전송되었습니다.</div>
+            <div id="receipt-box-content">
+                <h2 style="color: var(--primary-blue); margin-top:0;">🧾 주문 영수증</h2>
+                <p style="font-size:0.85em; color:#777; margin:-10px 0 15px 0;" id="receipt-date">2026-00-00 00:00</p>
+                <div style="border-top: 2px dashed #DDD; border-bottom: 2px dashed #DDD; padding: 15px 0; margin-bottom: 20px; text-align: left;">
+                    <div class="receipt-line"><span style="font-weight: bold;" id="receipt-user">👤 어린이</span><span>주문 완료</span></div>
+                    <div class="receipt-line" style="color: #E74C3C; font-weight:bold; font-size: 0.85em;" id="cook-status-text">🍳 맛있는 요리를 시작합니다!</div>
+                </div>
+                <p style="font-size:0.8em; color:#666; margin:0 0 10px 0;">주방에서 요리가 완성될 때까지<br>잠시만 기다려 주세요.</p>
             </div>
-            <button class="btn-side btn-order" onclick="closeReceiptAndReload()">확인 (처음으로)</button>
         </div>
     </div>
 
@@ -185,7 +161,26 @@
     function connectToKitchen() {
         if (!conn || !conn.open) {
             conn = peer.connect('jinyeong-burger-kitchen-2026');
-            conn.on('open', () => { console.log("주방망 안착 완료!"); });
+            conn.on('open', () => { console.log("주방망 연결 완료!"); });
+            
+            // 🛠 [요청 기능 구현]: 주방에서 보내오는 실시간 신호 대기 및 처리
+            conn.on('data', (data) => {
+                if (data.status === 'cook-finished') {
+                    console.log("주방으로부터 요리 완료 수신:", data.childName);
+                    
+                    // 영수증 박스를 축하 화면 UI로 교체 교체
+                    const receiptBox = document.getElementById('receipt-box-content');
+                    receiptBox.innerHTML = `
+                        <h2 style="color: #2ECC71; margin-top:0;">🎉 요리 완성! 🍟</h2>
+                        <p style="font-size:1.2em; font-weight:bold; margin:15px 0; color:#333;">
+                            🎵 ${data.childName} 친구!<br>맛있는 음식이 나왔어요!
+                        </p>
+                        <p style="font-size:0.9em; color:#666; margin-bottom:20px;">주방으로 와서 요리를 받아 가세요~</p>
+                        <button class="btn-side btn-order" onclick="closeReceiptAndReload()">😃 맛있게 먹기 (처음으로)</button>
+                    `;
+                }
+            });
+
             conn.on('close', () => { conn = null; setTimeout(connectToKitchen, 2000); });
             conn.on('error', () => { conn = null; });
         }
@@ -327,14 +322,12 @@
         document.getElementById('item-list-content').innerHTML = currentRecipe.map((i, idx) => `<div>${idx+1}. ${i.name}</div>`).join('');
     }
 
-    // 🛠 얼굴 인식 및 모션 트리거 제어 엔진 핵심 로직
     async function startFacePay() {
         if (currentRecipe.length === 0) return;
         const screen = document.getElementById('face-pay-screen');
         const video = document.getElementById('camera-view');
         const bar = document.getElementById('pay-bar');
         
-        // 상태값 초기 세팅
         bar.style.width = '0%';
         bar.classList.remove('start-fill');
         document.getElementById('pay-title').innerText = "🔍 동그라미 안에 얼굴을 보여주세요!";
@@ -346,7 +339,6 @@
             video.srcObject = stream;
             localStream = stream;
             
-            // 카메라 화면의 모션을 분석하기 위한 백그라운드 캔버스 세팅
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             let prevBlendedData = null;
@@ -355,14 +347,12 @@
                 if (screen.style.display === 'none') return;
                 
                 if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                    canvas.width = 64; // 빠른 연산을 위해 해상도 축소 축소
-                    canvas.height = 48;
+                    canvas.width = 64; canvas.height = 48;
                     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                     const currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                     
                     if (prevBlendedData) {
                         let diff = 0;
-                        // 픽셀 변화량 전수 검사
                         for (let i = 0; i < currentData.data.length; i += 4) {
                             const rDiff = Math.abs(currentData.data[i] - prevBlendedData.data[i]);
                             const gDiff = Math.abs(currentData.data[i+1] - prevBlendedData.data[i+1]);
@@ -370,31 +360,25 @@
                             if (rDiff + gDiff + bDiff > 90) diff++;
                         }
                         
-                        // 화면 안에 움직임 임계치 포착 완료 시 트리거 작동
                         if (diff > 80) { 
-                            console.log("모션 센서: 어린이 감지 완료!");
                             document.getElementById('pay-title').innerText = "✨ 얼굴 인식 성공!";
                             document.getElementById('pay-status-text').innerText = "🚀 맛있게 만들어 줄게요! 주방 전송 중...";
-                            
-                            // 게이지 애니메이션 실행
                             bar.classList.add('start-fill');
                             
                             motionTimeout = setTimeout(() => {
                                 stopCamera();
                                 sendFinalOrder();
                             }, 3600);
-                            return; // 분석 루프 종료
+                            return;
                         }
                     }
                     prevBlendedData = currentData;
                 }
                 requestAnimationFrame(checkMotion);
             }
-            // 모션 트래킹 루프 가동
             requestAnimationFrame(checkMotion);
 
         } catch (e) {
-            console.log("카메라 스트림 인식 우회");
             sendFinalOrder();
         }
     }
@@ -407,7 +391,6 @@
     }
 
     function sendFinalOrder() {
-        // 🛠 주방으로 넘길 때 글자가 깨지지 않도록 이름(name)과 고유 이미지 식별 코드(file) 오브젝트 맵 구조 전체 바인딩 송신
         const recipeData = currentRecipe.map(i => ({ name: i.name, file: i.file }));
 
         if (conn && conn.open) {
@@ -416,13 +399,12 @@
             conn = peer.connect('jinyeong-burger-kitchen-2026');
             setTimeout(() => {
                 if(conn && conn.open) conn.send({ customer: customerName, recipe: recipeData });
-                else alert("주방 모니터 서버가 불안정합니다. 주방 화면의 새로고침을 확인해 주세요.");
             }, 1000);
         }
         
         document.getElementById('face-pay-screen').style.display = 'none';
         const now = new Date();
-        document.getElementById('receipt-date').innerText = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        document.getElementById('receipt-date').innerText = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')} ${String(now.getMinutes()).padStart(2,'0')}`;
         document.getElementById('receipt-user').innerText = `👤 ${customerName} 어린이`;
         document.getElementById('receipt-modal').style.display = 'flex';
     }
