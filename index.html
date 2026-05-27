@@ -33,6 +33,7 @@
             width: 20%; background: #FFF; box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             padding: 10px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; z-index: 5; box-sizing: border-box;
         }
+        #cooking-area { flex: 1; position: relative; background: var(--bg-soft); overflow: hidden; }
         .btn-ing {
             background: #F0F3F6; border: 2px solid #E2E8F0; padding: 10px 5px; font-size: 0.95em;
             border-radius: 15px; cursor: pointer; font-family: 'Gaegu', sans-serif; font-weight: bold; transition: 0.15s;
@@ -370,9 +371,9 @@
         }
     }
 
-    // 통신 데이터 간소화 (id 정보만 담긴 file 값만 전송하여 글자 깨짐 완전 차단)
+    // 전송 로직 유지: 각 아이템의 탭(카테고리) 정보도 함께 넘겨 주방에서 조립할 수 있게 안전 연동
     function sendFinalOrder() {
-        const recipeData = currentRecipe.map(i => ({ file: i.file }));
+        const recipeData = currentRecipe.map(i => ({ file: i.file, tab: i.tab }));
 
         if (conn && conn.open) {
             conn.send({ customer: customerName, recipe: recipeData });

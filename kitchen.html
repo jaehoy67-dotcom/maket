@@ -28,7 +28,7 @@ h1{
 }
 #order-list{
     display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+    grid-template-columns:repeat(auto-fill,minmax(420px,1fr));
     gap:20px;
     max-width:1400px;
     margin:0 auto;
@@ -58,33 +58,62 @@ h1{
     font-size:0.9em;
     line-height:1.5;
 }
-.kitchen-recipe-container{
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px;
-    justify-content:flex-start;
-    align-items:flex-start;
+/* 주방 조리 구역 배치: 버거 / 꼬치 / 음료가 가로로 따로 분리됨 */
+.kitchen-display-zones {
+    display: flex;
+    justify-content: space-around;
+    background: #EDF1F5;
+    padding: 15px 5px;
+    border-radius: 20px;
+    margin-bottom: 15px;
+    min-height: 220px;
 }
-.kitchen-ing-item{
-    background:#F8F9FA;
-    border-radius:15px;
-    padding:10px;
-    width:90px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
+.food-zone {
+    display: flex;
+    flex-direction: column-reverse; /* 아래에서부터 차곡차곡 위로 쌓이게 처리 */
+    align-items: center;
+    width: 30%;
+    position: relative;
+    border-right: 1px dashed #CCC;
 }
-.kitchen-ing-img{
-    width:55px;
-    height:55px;
-    object-fit:contain;
-    margin-bottom:5px;
+.food-zone:last-child { border-right: none; }
+.zone-title {
+    position: absolute;
+    bottom: -12px;
+    font-size: 0.65em;
+    color: #777;
+    background: #FFF;
+    padding: 2px 6px;
+    border-radius: 10px;
+    border: 1px solid #DDD;
 }
-.ing-name{
-    font-size:0.75em;
-    text-align:center;
-    line-height:1.2;
-    word-break:keep-all;
+/* 쌓이는 이미지 컴포넌트 구조 설정 (키오스크의 축소판 겹치기 구조) */
+.kitchen-stack-item {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: -35px; /* 이미지들이 실감나게 위로 겹쳐 쌓이도록 마진 설정 */
+}
+.kitchen-stack-item:first-child { margin-top: 0; } /* 맨 아래 재료는 마진 제외 */
+
+.kitchen-ing-img {
+    width: 90px;
+    height: auto;
+    object-fit: contain;
+}
+/* 꼬치나 음료는 크기 커스텀 조정 */
+.zone-skewer .kitchen-ing-img { width: 75px; }
+.zone-drink .kitchen-ing-img { width: 65px; margin-top: -45px; }
+
+.ing-name-badge {
+    font-size: 0.55em;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 1px 5px;
+    border-radius: 5px;
+    margin-top: -5px;
+    z-index: 10;
 }
 .done-btn{
     margin-top:18px;
@@ -113,7 +142,6 @@ h1{
 const orderList = document.getElementById('order-list');
 const statusText = document.getElementById('server-status');
 
-// 주방 매칭용 메뉴 데이터 탑재 (필수)
 const menusDict = {
     'bun_top': { name: '위빵', icon: '🍞' },
     'patty': { name: '패티', icon: '🍖' },
@@ -157,35 +185,57 @@ function addOrderCard(data, conn){
     const card = document.createElement('div');
     card.className = 'order-card';
 
-    // 안전하게 복구된 ID 데이터를 바탕으로 텍스트 요약 생성
+    // 전체 요약 생성
     const textSummary = data.recipe.map((r, idx)=>{
         const itemInfo = menusDict[r.file] || { name: r.file || '재료', icon: '🍔' };
-        return `${idx + 1}. ${itemInfo.icon}${itemInfo.name}`;
+        return `${itemInfo.icon}${itemInfo.name}`;
     }).join(', ');
 
-    // index.html과 완벽히 호환되는 로컬 이미지 노출 방식
-    const imagesHtml = data.recipe.map(r=>{
-        const itemInfo = menusDict[r.file] || { name: r.file || '재료', icon: '🍔' };
-        const localImageUrl = `${r.file}.png`; // 예: bun_top.png
+    // 햄버거, 꼬치, 음료수 분류 처리용 배열
+    let burgerHtml = '';
+    let skewerHtml = '';
+    let drinkHtml = '';
 
-        return `
-            <div class="kitchen-ing-item">
-                <img
-                    src="${localImageUrl}"
-                    class="kitchen-ing-img"
-                    alt="${itemInfo.name}"
-                    onerror="this.style.opacity='0.2';"
-                >
-                <div class="ing-name">${itemInfo.icon} ${itemInfo.name}</div>
+    // 수신된 순서대로 HTML 요소를 쌓아 올림
+    data.recipe.forEach(r => {
+        const itemInfo = menusDict[r.file] || { name: r.file || '재료', icon: '🍔' };
+        const localImageUrl = `${r.file}.png`;
+        const itemHtml = `
+            <div class="kitchen-stack-item">
+                <img src="${localImageUrl}" class="kitchen-ing-img" alt="${itemInfo.name}">
+                <div class="ing-name-badge">${itemInfo.icon} ${itemInfo.name}</div>
             </div>
         `;
-    }).join('');
+
+        // 종류(tab)에 맞춰서 각각의 조리 벽면에 배치함
+        if (r.tab === 'burger' || ['bun_top', 'patty', 'lettuce', 'cheese', 'tomato', 'bun_bottom'].includes(r.file)) {
+            burgerHtml += itemHtml;
+        } else if (r.tab === 'skewer' || ['steak', 'shrimp', 'pepper'].includes(r.file)) {
+            skewerHtml += itemHtml;
+        } else if (r.tab === 'drink' || ['cola', 'cider', 'juice'].includes(r.file)) {
+            drinkHtml += itemHtml;
+        }
+    });
 
     card.innerHTML = `
         <div>
             <h2>🎈 ${data.customer || '어린이'} 주문</h2>
             <div class="order-text-summary">📋 ${textSummary}</div>
-            <div class="kitchen-recipe-container">${imagesHtml}</div>
+            
+            <div class="kitchen-display-zones">
+                <div class="food-zone zone-burger">
+                    <div class="zone-title">🍔 버거</div>
+                    ${burgerHtml || '<div style="font-size:0.7em; color:#AAA; margin-bottom:20px;">선택 없음</div>'}
+                </div>
+                <div class="food-zone zone-skewer">
+                    <div class="zone-title">🍢 꼬치</div>
+                    ${skewerHtml || '<div style="font-size:0.7em; color:#AAA; margin-bottom:20px;">선택 없음</div>'}
+                </div>
+                <div class="food-zone zone-drink">
+                    <div class="zone-title">🥤 음료</div>
+                    ${drinkHtml || '<div style="font-size:0.7em; color:#AAA; margin-bottom:20px;">선택 없음</div>'}
+                </div>
+            </div>
         </div>
         <button class="done-btn">✅ 조리 완료</button>
     `;
