@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>주방용 모니터 시스템</title>
     <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
@@ -39,8 +40,13 @@
             display: flex; flex-direction: column-reverse; align-items: center;
             background: #F8F9FA; padding: 15px; border-radius: 12px; margin-bottom: 15px; gap: 2px; min-height: 100px;
         }
-        .kitchen-ing-img { width: 120px; height: auto; object-fit: contain; }
-        .order-text-summary { font-size: 0.85em; color: #666; text-align: left; margin-bottom: 10px; line-height: 1.3; }
+        .kitchen-ing-img { 
+            width: 140px; 
+            height: auto; 
+            object-fit: contain;
+            display: block;
+        }
+        .order-text-summary { font-size: 0.85em; color: #666; text-align: left; margin-bottom: 10px; line-height: 1.3; font-family: 'Nanum Gothic', sans-serif; }
 
         .done-btn {
             background: #2ECC71; color: white; border: none; padding: 12px; border-radius: 12px;
@@ -49,22 +55,18 @@
         }
         .done-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #27AE60; }
 
-        /* 🎉 조리 완료 팝업 전체화면 스크린 스타일 */
         .complete-screen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0, 0, 0, 0.9); z-index: 9999;
             display: flex; justify-content: center; align-items: center;
-            animation: fadeIn 0.3s ease-out;
         }
         .complete-box {
             background: white; color: #333; padding: 40px; border-radius: 30px;
             text-align: center; box-shadow: 0 10px 30px rgba(255,212,59,0.3);
-            border: 6px solid #FFD43B; animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 6px solid #FFD43B;
         }
         .complete-box h1 { color: #E74C3C; font-size: 3em; margin: 0 0 10px 0; }
         .complete-box h2 { color: #2C3E50; font-size: 1.8em; margin: 0; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes popUp { from { transform: scale(0.7); } to { transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -76,9 +78,8 @@
 <script>
     const statusBar = document.getElementById('status-bar');
     const orderList = document.getElementById('order-list');
-    let activeConn = null; // 키오스크와 신호를 주고받을 전역 연결 채널
+    let activeConn = null;
 
-    // 🛠 내장 메뉴 데이터 선언 완료
     const menus = {
         burger: [
             { id: 'bun_bottom', name: '아래빵', icon: '🍞' },
@@ -132,10 +133,9 @@
             const card = document.createElement('div');
             card.className = 'order-card';
             
-            // 전송받은 영수증 텍스트 요약화
             const textSummary = data.recipe.map((r, idx) => `${idx+1}.${r.name}`).join(', ');
 
-            // 이미지 소스 렌더링 매핑
+            // 🛠️ 주방과 인덱스가 같은 주소에 있으므로 영문 파일명(r.file)을 상대 경로로 직접 호출합니다!
             const imagesHtml = data.recipe.map(r => {
                 return `<img src="${r.file}.png" class="kitchen-ing-img" alt="${r.name}">`;
             }).join('');
@@ -153,15 +153,13 @@
             orderList.appendChild(card);
             
             const audio = new Audio('https://t1.daumcdn.net/cfile/tistory/99412B355A38B17305?original');
-            audio.play().catch(e => console.log("자동재생 인터랙션 활성화"));
+            audio.play().catch(e => console.log("오디오 활성화"));
         });
     });
 
-    // 🛠 [요청 기능 구현]: 조리 완료 공정 처리 통제 함수
     function finishOrder(button, name) {
         const card = button.closest('.order-card');
         
-        // 1. 키오스크 기기로 역방향 '요리 완료 고유 무선 신호' 발송 처리
         if (activeConn && activeConn.open) {
             activeConn.send({ status: 'cook-finished', childName: name });
         }

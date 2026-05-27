@@ -163,12 +163,8 @@
             conn = peer.connect('jinyeong-burger-kitchen-2026');
             conn.on('open', () => { console.log("주방망 연결 완료!"); });
             
-            // 🛠 [요청 기능 구현]: 주방에서 보내오는 실시간 신호 대기 및 처리
             conn.on('data', (data) => {
                 if (data.status === 'cook-finished') {
-                    console.log("주방으로부터 요리 완료 수신:", data.childName);
-                    
-                    // 영수증 박스를 축하 화면 UI로 교체 교체
                     const receiptBox = document.getElementById('receipt-box-content');
                     receiptBox.innerHTML = `
                         <h2 style="color: #2ECC71; margin-top:0;">🎉 요리 완성! 🍟</h2>
@@ -191,12 +187,12 @@
 
     const menus = {
         burger: [
-            { id: 'bun_bottom', name: '아래빵', icon: '🍞' },
+            { id: 'bun_top', name: '위빵', icon: '🍞'  },
             { id: 'patty', name: '패티', icon: '🍖' },
             { id: 'lettuce', name: '양상추', icon: '🥬' },
             { id: 'cheese', name: '치즈', icon: '🧀' },
             { id: 'tomato', name: '토마토', icon: '🍅' },
-            { id: 'bun_top', name: '위빵', icon: '🍞' }
+            { id: 'bun_bottom', name: '아래빵', icon: '🍞' }
         ],
         skewer: [
             { id: 'steak', name: '스테이크', icon: '🥩' },
@@ -331,7 +327,7 @@
         bar.style.width = '0%';
         bar.classList.remove('start-fill');
         document.getElementById('pay-title').innerText = "🔍 동그라미 안에 얼굴을 보여주세요!";
-        document.getElementById('pay-status-text').innerText = "🙂 어린이 얼굴 탐색 중...";
+        document.getElementById('pay-status-text').innerText = "🙂 얼굴 탐색 중...";
 
         screen.style.display = 'flex';
         try {
