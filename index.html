@@ -17,13 +17,16 @@
         body { 
             font-family: 'Gaegu', 'Nanum Gothic', sans-serif; 
             background: var(--bg-soft); 
-            margin: 0; \
+            margin: 0; 
             text-align: center; 
             overflow: hidden; 
             color: var(--text-dark);
             font-size: 1.3em;
+            user-select: none;
+            -webkit-user-select: none;
         }
         
+        /* 1. 상단 타이틀 & 탭 바 */
         #header-area {
             background: var(--primary-blue);
             padding: 15px 10px;
@@ -52,8 +55,10 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
+        /* 2. 메인 컨테이너 레이아웃 */
         #main-container { display: flex; height: calc(100vh - 130px); position: relative; }
         
+        /* 왼쪽 재료 선택 바 */
         #menu-bar {
             width: 20%;
             background: #FFF;
@@ -78,6 +83,7 @@
         }
         .btn-ing:active { transform: scale(0.95); background: #E2E8F0; }
 
+        /* 가운데 요리조리 쌓이는 공간 */
         #cooking-area {
             width: 60%;
             position: relative;
@@ -85,9 +91,15 @@
             background-image: radial-gradient(#EAE6D9 1.5px, transparent 1.5px);
             background-size: 24px 24px;
         }
+        /* ✨ 1번 복구: 위에서 아래로 뾱 쌓이는 애니메이션 효과 */
+        @keyframes popIn {
+            0% { transform: translateX(-50%) scale(0) translateY(-200px); opacity: 0; }
+            100% { transform: translateX(-50%) scale(var(--dynamic-scale, 1)) translateY(0); opacity: 1; }
+        }
         .ing-img {
             position: absolute;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            transform-origin: bottom center;
         }
         #skewer-stick {
             position: absolute;
@@ -102,6 +114,7 @@
             transform-origin: bottom center;
         }
 
+        /* 오른쪽 장바구니 및 제어 바 */
         #sidebar-right {
             width: 20%;
             background: #FFF;
@@ -127,10 +140,11 @@
         }
         .btn-undo { background: #E0E0E0; color: #333; }
         .btn-clear { background: #FAB1A0; color: #C0392B; }
+        /* ✨ 3번 복구: 주문하기 버튼 스타일 */
         .btn-order { background: #2ECC71; color: white; font-size: 1.15em; box-shadow: 0 4px 6px rgba(46,204,113,0.3); }
         .btn-order:active { transform: scale(0.98); }
 
-        /* 화면 팝업 스크린 레이아웃 */
+        /* Fullscreen 레이어 (스캔, 페이스페이, 영수증) */
         .fullscreen-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0,0,0,0.85); z-index: 1000;
@@ -188,9 +202,11 @@
 
     <div id="main-container">
         <div id="menu-bar"></div>
+        
         <div id="cooking-area">
             <div id="skewer-stick"></div>
         </div>
+        
         <div id="sidebar-right">
             <div id="item-list-box">
                 <h3>🛒 내가 담은 재료</h3>
@@ -205,7 +221,7 @@
     </div>
 
 <script>
-    // 🛠 주방과 동일 규격의 통신 서버망 설정 옵션 적용
+    // PeerJS 주방 통신 설정 옵션
     const peerOptions = {
         host: '0.peerjs.com',
         port: 443,
@@ -224,7 +240,7 @@
     let currentTab = 'burger';
     let customerName = "";
 
-    // 주방 모니터 연결 매핑 헬퍼 함수
+    // 주방 서버 상호 실시간 연결 수립 함수
     function connectToKitchen() {
         if (!conn || !conn.open) {
             console.log("주방 서버 수신 상태 연결 매핑 시도...");
@@ -247,10 +263,10 @@
         }
     }
 
-    // 서버가 준비되면 즉시 주방 연결 타겟팅 시작
     peer.on('open', () => { connectToKitchen(); });
     peer.on('disconnected', () => { peer.reconnect(); });
 
+    // ✨ 2번 복구: 위빵(bun_top)을 빠짐없이 다시 채워 넣은 전체 메뉴 데이터
     const menus = {
         burger: [
             { id: 'bun_bottom', name: '아래빵', icon: '🍞' },
@@ -273,13 +289,12 @@
         ]
     };
 
-    // 등원 스캔 및 이름 지정 엔터 입력 이벤트
+    // 이름 등록 완료 이벤트
     document.getElementById('barcode-input').addEventListener('change', (e) => {
         customerName = e.target.value.trim();
         if(!customerName) return;
         document.getElementById('id-screen').style.display = 'none';
         
-        // 사용자가 입장하는 즉시 네트워크 무선 다리를 재정비합니다.
         connectToKitchen();
         switchTab('burger');
     });
@@ -361,6 +376,8 @@
                 finalScale *= shrinkBurger;
                 currentGap *= shrinkBurger;
                 el.style.width = '240px'; el.style.left = c.x;
+                // 애니메이션과 스케일이 꼬이지 않도록 변수로 할당 처리
+                el.style.setProperty('--dynamic-scale', finalScale);
                 el.style.transform = `translateX(-50%) scale(${finalScale})`;
                 el.style.bottom = `${60 + (bIdx * currentGap)}px`;
                 el.style.zIndex = bIdx + (item.tab === currentTab ? 100 : 10);
@@ -370,6 +387,7 @@
                 finalScale *= shrinkSkewer;
                 currentGap *= shrinkSkewer;
                 el.style.width = '160px'; el.style.left = c.x;
+                el.style.setProperty('--dynamic-scale', finalScale);
                 el.style.transform = `translateX(-50%) scale(${finalScale})`;
                 el.style.bottom = `${90 + (sIdx * currentGap)}px`;
                 el.style.zIndex = sIdx + (item.tab === currentTab ? 100 : 10);
@@ -379,6 +397,7 @@
                 finalScale *= shrinkDrink;
                 currentGap *= shrinkDrink;
                 el.style.width = '130px'; el.style.left = c.x;
+                el.style.setProperty('--dynamic-scale', finalScale);
                 el.style.transform = `translateX(-50%) scale(${finalScale})`;
                 el.style.bottom = `${60 + (dIdx * currentGap)}px`;
                 el.style.zIndex = dIdx + (item.tab === currentTab ? 100 : 10);
@@ -401,7 +420,7 @@
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             video.srcObject = stream;
         } catch (e) {
-            console.log("카메라 인식 스킵 후 바로 전송합니다.");
+            console.log("카메라 환경 미지원으로 인한 즉시 패스 처리");
             sendFinalOrder();
             return;
         }
@@ -419,15 +438,14 @@
     function sendFinalOrder() {
         if (conn && conn.open) {
             conn.send({ customer: customerName, recipe: currentRecipe.map(i => i.name) });
-            console.log("주문 데이터 주방으로 안전 송신 완료!");
+            console.log("주문 데이터 주방으로 전송 완료");
         } else {
-            console.log("통신 일시 단절 발생, 강제 연결 수립 후 즉시 재전송합니다.");
             conn = peer.connect('jinyeong-burger-kitchen-2026');
             setTimeout(() => {
                 if(conn && conn.open) {
                     conn.send({ customer: customerName, recipe: currentRecipe.map(i => i.name) });
                 } else {
-                    alert("주방 화면이 활성화되어있지 않아 전송에 실패했습니다. 주방 모니터를 먼저 켜주세요.");
+                    alert("주방 모니터가 연결되어 있지 않습니다. 주방 화면을 먼저 켜주세요.");
                 }
             }, 1000);
         }
