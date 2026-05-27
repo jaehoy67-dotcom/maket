@@ -1,495 +1,406 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>진영 유치원 스마트 키오스크</title>
-    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <style>
-        :root {
-            --primary-blue: #3B5998;
-            --point-yellow: #FFD43B;
-            --bg-soft: #F9F8F3;
-            --text-dark: #333333;
-        }
 
-        html, body {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
+<meta charset="UTF-8">
 
-        body { 
-            font-family: 'Gaegu', 'Nanum Gothic', sans-serif; 
-            background: var(--bg-soft); 
-            text-align: center; 
-            color: var(--text-dark);
-            font-size: 1.2em; /* 태블릿 밸런스를 위해 소폭 조정 */
-            user-select: none;
-            -webkit-user-select: none;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        /* 1. 상단 타이틀 & 탭 바 (높이 최적화) */
-        #header-area {
-            background: var(--primary-blue);
-            padding: 10px 10px;
-            color: white;
-            position: relative;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            flex-shrink: 0;
-        }
-        #header-area h1 { margin: 0 0 8px 0; font-size: 1.5em; color: var(--point-yellow); letter-spacing: 1px; }
-        
-        .tab-bar { display: flex; justify-content: center; gap: 12px; }
-        .tab-btn {
-            background: rgba(255,255,255,0.2);
-            border: 2px solid transparent;
-            color: white;
-            padding: 6px 20px;
-            font-size: 1em;
-            border-radius: 30px;
-            cursor: pointer;
-            font-family: 'Gaegu', sans-serif;
-            font-weight: bold;
-            transition: 0.2s;
-        }
-        .tab-btn.active {
-            background: var(--point-yellow);
-            color: var(--text-dark);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-        /* 2. 메인 컨테이너 레이아웃 (전체 화면 높이 유연 반응) */
-        #main-container { 
-            display: flex; 
-            flex: 1;
-            position: relative; 
-            overflow: hidden;
-        }
-        
-        /* 왼쪽 재료 선택 바 */
-        #menu-bar {
-            width: 20%;
-            background: #FFF;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            overflow-y: auto;
-            z-index: 5;
-            box-sizing: border-box;
-        }
-        .btn-ing {
-            background: #F0F3F6;
-            border: 2px solid #E2E8F0;
-            padding: 10px 5px;
-            font-size: 0.95em;
-            border-radius: 15px;
-            cursor: pointer;
-            font-family: 'Gaegu', sans-serif;
-            font-weight: bold;
-            transition: 0.15s;
-        }
-        .btn-ing:active { transform: scale(0.95); background: #E2E8F0; }
+<title>진영 유치원 스마트 키오스크</title>
 
-        /* 가운데 요리조리 공간 (높이 유연 확보로 위빵 노출 해결) */
-        #cooking-area {
-            width: 60%;
-            position: relative;
-            background: #FFFDF7;
-            background-image: radial-gradient(#EAE6D9 1.5px, transparent 1.5px);
-            background-size: 24px 24px;
-            overflow: hidden;
-        }
-        @keyframes popIn {
-            0% { transform: translateX(-50%) scale(0) translateY(-200px); opacity: 0; }
-            100% { transform: translateX(-50%) scale(var(--dynamic-scale, 1)) translateY(0); opacity: 1; }
-        }
-        .ing-img {
-            position: absolute;
-            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            transform-origin: bottom center;
-        }
-        #skewer-stick {
-            position: absolute;
-            bottom: 40px;
-            width: 20px;
-            height: 70%; /* 비율 기반 높이로 변경하여 화면 잘림 방지 */
-            max-height: 480px;
-            background: #D7CCC8;
-            border-radius: 10px;
-            border: 3px solid #8D6E63;
-            box-shadow: 3px 5px 10px rgba(0,0,0,0.15);
-            transition: all 0.4s ease;
-            transform-origin: bottom center;
-        }
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
 
-        /* 오른쪽 장바구니 및 제어 바 (태블릿 전용 대폭 수정 부) */
-        #sidebar-right {
-            width: 20%;
-            background: #FFF;
-            box-shadow: -2px 0 10px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden; /* 내부 요소가 넘쳐서 버튼을 밀어내지 못하게 차단 */
-            box-sizing: border-box;
-        }
-        #item-list-box { 
-            flex: 1; 
-            padding: 12px; 
-            overflow-y: auto; /* 담은 재료가 많아지면 이 박스 안에서만 스크롤 됨 */
-            text-align: left; 
-            border-bottom: 2px dashed #E2E8F0; 
-        }
-        #item-list-box h3 { margin-top: 0; color: var(--primary-blue); font-size: 1.1em; border-bottom: 2px solid var(--primary-blue); padding-bottom: 5px; }
-        #item-list-content { font-size: 0.9em; line-height: 1.4; color: #555; }
-        
-        /* 제어 버튼 영역을 하단에 단단히 고정 */
-        .control-btns { 
-            padding: 12px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 8px; 
-            background: #FAFBFD; 
-            flex-shrink: 0; /* 어떤 상황에서도 찌그러지거나 밀려나지 않음 */
-        }
-        .btn-side {
-            width: 100%;
-            padding: 10px 0;
-            font-size: 0.95em;
-            border-radius: 12px;
-            border: none;
-            cursor: pointer;
-            font-family: 'Gaegu', sans-serif;
-            font-weight: bold;
-            transition: 0.2s;
-            box-sizing: border-box;
-        }
-        .btn-undo { background: #E0E0E0; color: #333; }
-        .btn-clear { background: #FAB1A0; color: #C0392B; }
-        .btn-order { background: #2ECC71; color: white; font-size: 1.1em; box-shadow: 0 4px 6px rgba(46,204,113,0.3); }
-        .btn-order:active { transform: scale(0.98); }
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
-        /* Fullscreen 레이어 */
-        .fullscreen-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.85); z-index: 1000;
-            display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;
-        }
-        
-        #id-screen input {
-            font-size: 1.5em; padding: 12px; text-align: center; border-radius: 15px;
-            border: 4px solid var(--point-yellow); width: 280px; margin-top: 20px; font-family: 'Gaegu', sans-serif;
-        }
+<style>
 
-        #camera-view { width: 320px; height: 240px; background: #000; border-radius: 20px; border: 4px solid white; transform: rotateY(180deg); object-fit: cover; }
-        #pay-progress-container { width: 320px; height: 15px; background: #555; border-radius: 10px; margin-top: 20px; overflow: hidden; }
-        #pay-bar { width: 0%; height: 100%; background: #2ECC71; transition: width 3.6s linear; }
+:root{
+    --primary-blue:#3B5998;
+    --point-yellow:#FFD43B;
+    --bg-soft:#F9F8F3;
+    --text-dark:#333333;
+}
 
-        .modal-box { background: white; color: #333; padding: 25px; border-radius: 25px; width: 300px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
-        .receipt-line { display: flex; justify-content: space-between; margin: 8px 0; font-size: 0.9em; }
-    </style>
+body{
+    font-family:'Gaegu','Nanum Gothic',sans-serif;
+    background:var(--bg-soft);
+    margin:0;
+    text-align:center;
+    overflow:hidden;
+    color:var(--text-dark);
+    font-size:1.3em;
+}
+
+#header-area{
+    background:var(--primary-blue);
+    padding:15px 10px 10px 10px;
+    position:fixed;
+    top:0;
+    width:100%;
+    z-index:150;
+    border-radius:0 0 25px 25px;
+}
+
+#header-area h1{
+    color:white;
+    margin:0 0 10px 0;
+    font-size:1.4em;
+}
+
+#tab-bar{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    max-width:90%;
+    margin:0 auto;
+}
+
+.tab-btn{
+    flex:1;
+    padding:8px 12px;
+    border:none;
+    border-radius:18px;
+    background:rgba(255,255,255,0.2);
+    color:white;
+    font-weight:bold;
+    font-size:0.9em;
+}
+
+.tab-btn.active{
+    background:var(--point-yellow);
+    color:black;
+}
+
+#status-list{
+    position:fixed;
+    top:150px;
+    left:15px;
+    width:140px;
+    background:white;
+    border-radius:20px;
+    padding:15px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.08);
+    text-align:left;
+    z-index:100;
+    border:3px solid var(--primary-blue);
+    max-height:35vh;
+    overflow-y:auto;
+}
+
+#cooking-area{
+    position:relative;
+    width:100%;
+    height:50vh;
+    margin-top:140px;
+}
+
+.ing-img{
+    position:absolute;
+    transition:all 0.5s;
+    pointer-events:none;
+}
+
+#control-panel{
+    position:fixed;
+    bottom:0;
+    width:100%;
+}
+
+#menu-bar{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    padding:20px;
+    background:white;
+    border-radius:30px 30px 0 0;
+}
+
+.btn-ing{
+    padding:10px;
+    border:none;
+    border-radius:18px;
+    background:#F8F9FA;
+    font-family:'Gaegu',sans-serif;
+    font-size:0.9em;
+}
+
+#order-btn{
+    position:fixed;
+    right:20px;
+    top:150px;
+    padding:15px 25px;
+    background:#FF4757;
+    color:white;
+    border:none;
+    border-radius:25px;
+    font-size:1.1em;
+    z-index:160;
+}
+
+#connection-status{
+    position:fixed;
+    top:110px;
+    right:20px;
+    background:white;
+    padding:8px 14px;
+    border-radius:15px;
+    font-size:0.8em;
+    z-index:200;
+}
+
+</style>
 </head>
+
 <body>
 
-    <div id="id-screen" class="fullscreen-overlay">
-        <h2 style="font-size: 1.8em; color: var(--point-yellow); margin-bottom: 5px;">바코드를 찍어주세요 🏷️</h2>
-        <p style="font-size: 1.1em; margin: 0;">어린이의 이름을 키보드로 입력 후 엔터를 쳐도 됩니다.</p>
-        <input type="text" id="barcode-input" placeholder="이름을 입력하세요..." autofocus>
+<div id="header-area">
+
+    <h1>진영 마켓</h1>
+
+    <div id="tab-bar">
+
+        <button
+        id="tab-burger"
+        class="tab-btn active"
+        onclick="switchTab('burger')">
+        🍔 햄버거
+        </button>
+
+        <button
+        id="tab-skewer"
+        class="tab-btn"
+        onclick="switchTab('skewer')">
+        🍢 꼬치집
+        </button>
+
+        <button
+        id="tab-drink"
+        class="tab-btn"
+        onclick="switchTab('drink')">
+        🥤 음료수
+        </button>
+
     </div>
 
-    <div id="face-pay-screen" class="fullscreen-overlay" style="display: none;">
-        <h2 style="font-size: 1.6em; color: var(--point-yellow); margin-bottom: 15px;">😀 카메라를 보고 싱긋 웃어주세요!</h2>
-        <video id="camera-view" autoplay playsinline></video>
-        <div id="pay-progress-container"><div id="pay-bar"></div></div>
-        <p style="margin-top: 15px; color: #DDD; font-size: 0.9em;">얼굴 인식 및 주방 전송 처리 중...</p>
-    </div>
+</div>
 
-    <div id="receipt-modal" class="fullscreen-overlay" style="display: none;">
-        <div class="modal-box">
-            <h2 style="color: var(--primary-blue); margin-top:0;">🧾 주문 영수증</h2>
-            <p style="font-size:0.85em; color:#777; margin:-10px 0 15px 0;" id="receipt-date">2026-00-00 00:00</p>
-            <div style="border-top: 2px dashed #DDD; border-bottom: 2px dashed #DDD; padding: 15px 0; margin-bottom: 20px; text-align: left;">
-                <div class="receipt-line"><span style="font-weight: bold;" id="receipt-user">👤 어린이</span><span>주문 완료</span></div>
-                <div class="receipt-line" style="color: #777; font-size: 0.8em;">* 주방 모니터로 전송되었습니다.</div>
-            </div>
-            <button class="btn-side btn-order" onclick="closeReceiptAndReload()">확인 (처음으로)</button>
-        </div>
-    </div>
+<div id="connection-status">
+🟡 연결 중
+</div>
 
-    <div id="header-area">
-        <h1>🍔 진영 유치원 맛있는 요리조리 키오스크 🍕</h1>
-        <div class="tab-bar">
-            <button id="tab-burger" class="tab-btn" onclick="switchTab('burger')">🍔 수제버거</button>
-            <button id="tab-skewer" class="tab-btn" onclick="switchTab('skewer')">🍢 모둠꼬치</button>
-            <button id="tab-drink" class="tab-btn" onclick="switchTab('drink')">🥤 시원한음료</button>
-        </div>
-    </div>
+<div id="status-list">
 
-    <div id="main-container">
-        <div id="menu-bar"></div>
-        
-        <div id="cooking-area">
-            <div id="skewer-stick"></div>
-        </div>
-        
-        <div id="sidebar-right">
-            <div id="item-list-box">
-                <h3>🛒 내가 담은 재료</h3>
-                <div id="item-list-content"></div>
-            </div>
-            <div class="control-btns">
-                <button class="btn-side btn-undo" onclick="undoLast()">↩ 하나 빼기</button>
-                <button class="btn-side btn-clear" onclick="clearAll()">❌ 다 비우기</button>
-                <button class="btn-side btn-order" onclick="startFacePay()">🚀 주문하기</button>
-            </div>
-        </div>
-    </div>
+<strong>
+📋 담은 주머니
+</strong>
+
+<div id="item-list-content"></div>
+
+</div>
+
+<button id="order-btn"
+onclick="sendFinalOrder()">
+주문 완료 ➔
+</button>
+
+<div id="cooking-area"></div>
+
+<div id="control-panel">
+
+<div id="menu-bar"></div>
+
+</div>
 
 <script>
-    // 📡 주방 연동 통신 옵션 설정
-    const peerOptions = {
-        host: '0.peerjs.com',
-        port: 443,
-        secure: true,
-        config: {
-            'iceServers': [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-            ]
-        }
-    };
 
-    let peer = new Peer(peerOptions);
-    let conn = null;
-    let currentRecipe = [];
-    let currentTab = 'burger';
-    let customerName = "";
+const connectionStatus =
+document.getElementById('connection-status');
 
-    // 실시간 주방 무선 채널 연결 함수
-    function connectToKitchen() {
-        if (!conn || !conn.open) {
-            console.log("주방 서버 실시간 스트림 브릿지 연동 중...");
-            conn = peer.connect('jinyeong-burger-kitchen-2026');
-            
-            conn.on('open', () => { 
-                console.log("주방 서버 무선 연동 완료!"); 
-            });
-            
-            conn.on('close', () => {
-                console.log("네트워크 단절 감지. 2초 후 자동 복구를 가동합니다.");
-                conn = null;
-                setTimeout(connectToKitchen, 2000);
-            });
+let currentRecipe = [];
+let currentTab = 'burger';
 
-            conn.on('error', (err) => { 
-                console.log("연결 오류 피드백:", err); 
-                conn = null;
-            });
-        }
-    }
+const menus = {
 
-    peer.on('open', () => { connectToKitchen(); });
-    peer.on('disconnected', () => { peer.reconnect(); });
+burger:[
+{id:'bun_bottom',name:'아래빵',icon:'🍞'},
+{id:'patty',name:'패티',icon:'🍖'},
+{id:'lettuce',name:'양상추',icon:'🥬'},
+{id:'cheese',name:'치즈',icon:'🧀'},
+{id:'tomato',name:'토마토',icon:'🍅'},
+{id:'bun_top',name:'위빵',icon:'🍞'}
+],
 
-    // 원본 메뉴 소스 완벽 보존
-    const menus = {
-        burger: [
-            { id: 'bun_bottom', name: '아래빵', icon: '🍞' },
-            { id: 'patty', name: '패티', icon: '🍖' },
-            { id: 'lettuce', name: '양상추', icon: '🥬' },
-            { id: 'cheese', name: '치즈', icon: '🧀' },
-            { id: 'tomato', name: '토마토', icon: '🍅' },
-            { id: 'bun_top', name: '위빵', icon: '🍞' }
-        ],
-        skewer: [
-            { id: 'steak', name: '스테이크', icon: '🥩' },
-            { id: 'shrimp', name: '새우', icon: '🍤' },
-            { id: 'tomato', name: '방울토마토', icon: '🍅' },
-            { id: 'pepper', name: '피망', icon: '🫑' }
-        ],
-        drink: [
-            { id: 'cola', name: '콜라', icon: '🥤' },
-            { id: 'cider', name: '사이다', icon: '🫧' },
-            { id: 'juice', name: '주스', icon: '🧃' }
-        ]
-    };
+skewer:[
+{id:'steak',name:'스테이크',icon:'🥩'},
+{id:'shrimp',name:'새우',icon:'🍤'},
+{id:'pepper',name:'피망',icon:'🫑'}
+],
 
-    document.getElementById('barcode-input').addEventListener('change', (e) => {
-        customerName = e.target.value.trim();
-        if(!customerName) return;
-        document.getElementById('id-screen').style.display = 'none';
-        
-        connectToKitchen();
-        switchTab('burger');
+drink:[
+{id:'cola',name:'콜라',icon:'🥤'},
+{id:'juice',name:'주스',icon:'🧃'}
+]
+
+};
+
+function switchTab(tab){
+
+    currentTab = tab;
+
+    document.querySelectorAll('.tab-btn')
+    .forEach(btn=>btn.classList.remove('active'));
+
+    document.getElementById('tab-'+tab)
+    .classList.add('active');
+
+    const menuBar =
+    document.getElementById('menu-bar');
+
+    menuBar.innerHTML =
+    menus[tab].map(m=>`
+
+        <button class="btn-ing"
+        onclick="addIng('${m.id}','${m.icon} ${m.name}')">
+
+        <div style="font-size:1.4em">
+        ${m.icon}
+        </div>
+
+        ${m.name}
+
+        </button>
+
+    `).join('');
+}
+
+switchTab('burger');
+
+function addIng(file,name){
+
+    currentRecipe.push(name);
+
+    updateList();
+}
+
+function updateList(){
+
+    document.getElementById('item-list-content')
+    .innerHTML = currentRecipe
+    .map((v,i)=>`
+        <div>${i+1}. ${v}</div>
+    `).join('');
+}
+
+let peer;
+let conn;
+
+startConnection();
+
+function startConnection(){
+
+    peer = new Peer({
+        debug:1
     });
 
-    function switchTab(tab) {
-        currentTab = tab;
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById('tab-' + tab).classList.add('active');
-        updatePositions();
+    peer.on('open', ()=>{
 
-        const menuBar = document.getElementById('menu-bar');
-        menuBar.innerHTML = menus[tab].map(m => `
-            <button class="btn-ing" onclick="addIng('${m.id}', '${m.icon} ${m.name}')">
-                <span style="font-size:1.4em; display:block; margin-bottom:3px;">${m.icon}</span>${m.name}
-            </button>
-        `).join('');
+        connectKitchen();
+    });
+
+    peer.on('disconnected', ()=>{
+
+        try{
+            peer.reconnect();
+        }catch(e){}
+    });
+
+    peer.on('close', ()=>{
+
+        setTimeout(startConnection,2000);
+    });
+
+    peer.on('error', (err)=>{
+
+        console.log(err);
+    });
+}
+
+function connectKitchen(){
+
+    if(conn && conn.open){
+        return;
     }
 
-    function addIng(file, name) {
-        const area = document.getElementById('cooking-area');
-        const uniqueId = 'ing-' + Date.now();
-        const img = document.createElement('img');
-        img.src = `${file}.png`;
-        img.id = uniqueId;
-        img.className = 'ing-img';
-        currentRecipe.push({ id: uniqueId, name: name, file: file, tab: currentTab });
-        area.appendChild(img);
-        updatePositions();
+    connectionStatus.innerHTML =
+        '🟡 주방 연결 중';
+
+    conn = peer.connect(
+        'jinyeong-burger-kitchen-2026',
+        {
+            reliable:true
+        }
+    );
+
+    conn.on('open', ()=>{
+
+        connectionStatus.innerHTML =
+            '🟢 연결 완료';
+    });
+
+    conn.on('close', ()=>{
+
+        connectionStatus.innerHTML =
+            '🔴 재연결 중';
+
+        setTimeout(connectKitchen,2000);
+    });
+
+    conn.on('error', ()=>{
+
+        connectionStatus.innerHTML =
+            '🔴 연결 오류';
+
+        setTimeout(connectKitchen,2000);
+    });
+}
+
+function sendFinalOrder(){
+
+    if(currentRecipe.length===0){
+        alert('메뉴를 담아 주세요!');
+        return;
     }
 
-    function undoLast() {
-        if (currentRecipe.length === 0) return;
-        const lastItem = currentRecipe.pop();
-        const el = document.getElementById(lastItem.id);
-        if (el) el.remove();
-        updatePositions();
-    }
+    const customerName =
+        prompt('이름을 입력해 주세요');
 
-    function clearAll() {
-        if (currentRecipe.length === 0) return;
-        currentRecipe.forEach(item => document.getElementById(item.id)?.remove());
+    if(!customerName) return;
+
+    const orderData = {
+        customer:customerName,
+        recipe:currentRecipe
+    };
+
+    if(conn && conn.open){
+
+        conn.send(orderData);
+
+        alert('🎉 주문 완료!');
+
         currentRecipe = [];
-        updatePositions();
+
+        updateList();
+
+    }else{
+
+        alert('주방 연결 중입니다 😥');
+
+        connectKitchen();
     }
+}
 
-    function updatePositions() {
-        const bStick = document.getElementById('skewer-stick');
-        let bIdx = 0, sIdx = 0, dIdx = 0;
-
-        const posConfig = {
-            burger: { burger: {x:'50%', s:1}, skewer: {x:'18%', s:0.55}, drink: {x:'82%', s:0.55} },
-            skewer: { skewer: {x:'50%', s:1}, burger: {x:'18%', s:0.55}, drink: {x:'82%', s:0.55} },
-            drink: { drink: {x:'50%', s:1}, burger: {x:'18%', s:0.55}, skewer: {x:'82%', s:0.55} }
-        };
-
-        const config = posConfig[currentTab];
-        bStick.style.left = config.skewer.x;
-        bStick.style.transform = `translateX(-50%) scale(${config.skewer.s})`;
-        bStick.style.opacity = (currentTab === 'skewer') ? 1 : 0.4;
-
-        const counts = { burger: 0, skewer: 0, drink: 0 };
-        currentRecipe.forEach(item => counts[item.tab]++);
-
-        const baseGap = { burger: 28, skewer: 50, drink: 60 }; // 태블릿 축소 폭 유연화 조정
-        
-        const shrinkBurger = counts.burger > 6 ? (6 / counts.burger) : 1;
-        const shrinkSkewer = counts.skewer > 5 ? (5 / counts.skewer) : 1;
-        const shrinkDrink  = counts.drink > 4 ? (4 / counts.drink) : 1;
-
-        currentRecipe.forEach((item) => {
-            const el = document.getElementById(item.id);
-            if (!el) return;
-            const c = config[item.tab];
-            
-            let finalScale = c.s;
-            let currentGap = baseGap[item.tab] * c.s;
-
-            if (item.tab === 'burger') {
-                finalScale *= shrinkBurger;
-                currentGap *= shrinkBurger;
-                el.style.width = '240px'; el.style.left = c.x;
-                el.style.setProperty('--dynamic-scale', finalScale);
-                el.style.transform = `translateX(-50%) scale(${finalScale})`;
-                el.style.bottom = `${45 + (bIdx * currentGap)}px`;
-                el.style.zIndex = bIdx + (item.tab === currentTab ? 100 : 10);
-                bIdx++;
-            } 
-            else if (item.tab === 'skewer') {
-                finalScale *= shrinkSkewer;
-                currentGap *= shrinkSkewer;
-                el.style.width = '160px'; el.style.left = c.x;
-                el.style.setProperty('--dynamic-scale', finalScale);
-                el.style.transform = `translateX(-50%) scale(${finalScale})`;
-                el.style.bottom = `${75 + (sIdx * currentGap)}px`;
-                el.style.zIndex = sIdx + (item.tab === currentTab ? 100 : 10);
-                sIdx++;
-            } 
-            else if (item.tab === 'drink') {
-                finalScale *= shrinkDrink;
-                currentGap *= shrinkDrink;
-                el.style.width = '130px'; el.style.left = c.x;
-                el.style.setProperty('--dynamic-scale', finalScale);
-                el.style.transform = `translateX(-50%) scale(${finalScale})`;
-                el.style.bottom = `${45 + (dIdx * currentGap)}px`;
-                el.style.zIndex = dIdx + (item.tab === currentTab ? 100 : 10);
-                dIdx++;
-            }
-            el.style.opacity = (item.tab === currentTab) ? 1 : 0.5;
-        });
-
-        document.getElementById('item-list-content').innerHTML = currentRecipe.map((i, idx) => `<div>${idx+1}. ${i.name}</div>`).join('');
-    }
-
-    async function startFacePay() {
-        if (currentRecipe.length === 0) return;
-        const screen = document.getElementById('face-pay-screen');
-        const video = document.getElementById('camera-view');
-        const bar = document.getElementById('pay-bar');
-
-        screen.style.display = 'flex';
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            video.srcObject = stream;
-        } catch (e) {
-            console.log("카메라 스트림 미확보 상태 확인, 즉시 전송 모드로 전환합니다.");
-            sendFinalOrder();
-            return;
-        }
-
-        setTimeout(() => { bar.style.width = '100%'; }, 200);
-
-        setTimeout(() => {
-            if(video.srcObject) {
-                video.srcObject.getTracks().forEach(t => t.stop());
-            }
-            sendFinalOrder();
-        }, 3800);
-    }
-
-    function sendFinalOrder() {
-        if (conn && conn.open) {
-            conn.send({ customer: customerName, recipe: currentRecipe.map(i => i.name) });
-            console.log("주문 서류 주방 발송 완료!");
-        } else {
-            conn = peer.connect('jinyeong-burger-kitchen-2026');
-            setTimeout(() => {
-                if(conn && conn.open) {
-                    conn.send({ customer: customerName, recipe: currentRecipe.map(i => i.name) });
-                } else {
-                    alert("주방 모니터 시스템이 꺼져 있습니다. 주방 화면을 먼저 실행해 주세요.");
-                }
-            }, 1000);
-        }
-        
-        document.getElementById('face-pay-screen').style.display = 'none';
-        const now = new Date();
-        document.getElementById('receipt-date').innerText = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-        document.getElementById('receipt-user').innerText = `👤 ${customerName} 어린이`;
-        document.getElementById('receipt-modal').style.display = 'flex';
-    }
-
-    function closeReceiptAndReload() {
-        location.reload();
-    }
 </script>
+
 </body>
 </html>
