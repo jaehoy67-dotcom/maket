@@ -10,10 +10,26 @@
             background: #2C3E50; 
             color: white; 
             font-family: 'Gaegu', 'Nanum Gothic', sans-serif; 
-            padding: 30px;
+            padding: 20px;
             margin: 0;
             font-size: 1.4em;
         }
+        /* 💡 대기 상태 표시 바 스타일 */
+        #status-bar {
+            background: #34495E;
+            padding: 12px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+        .status-waiting { color: #FFD43B; border: 2px solid #FFD43B; }
+        .status-ready { color: #2ECC71; border: 2px solid #2ECC71; background: #1E3024 !important; }
+        .status-connected { color: #3498DB; border: 2px solid #3498DB; background: #1A2A3A !important; }
+
         h1 {
             text-align: center;
             color: #FFD43B;
@@ -31,52 +47,76 @@
         .order-card { 
             background: white; 
             color: #333; 
-            padding: 25px; 
-            border-radius: 25px; 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15); 
-            border-top: 10px solid #3B5998; 
+            padding: 20px; 
+            border-radius: 15px; 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            animation: popIn 0.3s ease-out;
+            border-top: 8px solid #E74C3C;
         }
-        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
-        .order-card h2 { margin: 0 0 15px 0; font-size: 1.3em; color: #3B5998; border-bottom: 2px dashed #EEE; padding-bottom: 10px;}
-        .recipe-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-        .step { background: #F8F9FA; padding: 8px 15px; border-radius: 12px; font-weight: bold; border: 1px solid #E9ECEF; font-size: 0.95em; }
-        .done-btn { 
-            background: #2ECC71; 
-            color: white; 
-            border: none; 
-            padding: 12px; 
-            border-radius: 15px; 
-            font-size: 1em; 
-            font-weight: bold;
-            cursor: pointer; 
-            box-shadow: 0 4px 0 #27AE60;
+        .order-card h2 { margin: 0 0 15px 0; font-size: 1.3em; color: #2C3E50; }
+        .recipe-list { background: #F8F9FA; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
+        .step { margin: 5px 0; font-size: 0.95em; }
+        .done-btn {
+            background: #2ECC71;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
             font-family: 'Gaegu', sans-serif;
-            transition: all 0.1s;
+            font-weight: bold;
+            transition: 0.2s;
         }
-        .done-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #27AE60; }
+        .done-btn:hover { background: #27AE60; transform: scale(1.02); }
     </style>
 </head>
 <body>
+
+    <div id="status-bar" class="status-waiting">📡 주방 연결 준비 중입니다...</div>
+
     <h1>👨‍🍳 진영 주방 주문 접수 현황</h1>
     <div id="order-list"></div>
 
 <script>
-    // 🛠 고정 아이디 'jinyeong-burger-kitchen-2026'로 주방 수신 서버 실행
-    const peer = new Peer('jinyeong-burger-kitchen-2026');
+    const statusBar = document.getElementById('status-bar');
     const orderList = document.getElementById('order-list');
 
-    peer.on('open', (id) => {
-        console.log("주방 서버 수신 대기 시작! ID:", id);
+    // 🛠 글로벌 중계 서버 옵션을 명시하여 공용 무선 네트워크 통신망 구축
+    const peer = new Peer('jinyeong-burger-kitchen-2026', {
+        host: '0.peerjs.com',
+        port: 443,
+        secure: true,
+        config: {
+            'iceServers': [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        }
     });
 
+    // 1. 주방 서버가 정상적으로 클라우드에 등록되었을 때 (대기 상태 완료)
+    peer.on('open', (id) => {
+        console.log("주방 서버 수신 대기 시작! ID:", id);
+        statusBar.innerText = "🟢 주방 오픈! 손님(키오스크)을 기다리는 중입니다...";
+        statusBar.className = "status-ready";
+    });
+
+    // 2. 키오스크 기기가 접속했을 때
     peer.on('connection', (conn) => {
         console.log("손님용 키오스크 기기와 무선 연결망 확립!");
+        statusBar.innerText = "🤝 키오스크 연결 완료! 실시간 주문 접수가 가능합니다.";
+        statusBar.className = "status-connected";
         
+        // 키오스크 화면이 꺼지거나 새로고침되어 끊겼을 때 대기 상태로 복복구
+        conn.on('close', () => {
+            statusBar.innerText = "🟢 주방 오픈! 손님(키오스크)을 기다리는 중입니다...";
+            statusBar.className = "status-ready";
+        });
+
+        // 주문 데이터가 들어왔을 때 처리
         conn.on('data', (data) => {
             console.log("주문 데이터 정상 수신 완료:", data);
             const card = document.createElement('div');
@@ -94,12 +134,14 @@
             
             // 알림음 재생
             const audio = new Audio('https://t1.daumcdn.net/cfile/tistory/99412B355A38B17305?original');
-            audio.play().catch(e => console.log("알림 오디오 자동 재생 차단 해제 대기 중"));
+            audio.play().catch(e => console.log("첫 주문 시 오디오 차단 해제를 위해 화면을 한 번 클릭해 주세요."));
         });
     });
 
     peer.on('error', (err) => {
         console.error("주방 서버 피어 에러 발생:", err);
+        statusBar.innerText = "❌ 연결 오류가 발생했습니다. 새로고침을 해주세요.";
+        statusBar.className = "status-waiting";
     });
 </script>
 </body>
