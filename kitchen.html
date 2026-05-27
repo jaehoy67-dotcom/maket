@@ -80,8 +80,7 @@
     const orderList = document.getElementById('order-list');
     let activeConn = null;
 
-    // 🔥 [해결] 깃허브 배포 환경의 현재 웹 주소 기본 경로를 자동으로 추출하는 코드
-    // 예: https://아이디.github.io/레포지토리명/ 을 자동으로 계산해 냄
+    // 🔗 GitHub Pages 배포 환경의 현재 웹 주소 경로를 자동으로 추출 (엑박 완벽 방지)
     const currentBaseURL = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
 
     const menus = {
@@ -137,12 +136,32 @@
             const card = document.createElement('div');
             card.className = 'order-card';
             
-            const textSummary = data.recipe.map((r, idx) => `${idx+1}.${r.name}`).join(', ');
+            // 🛠️ 글자/객체 구조 둘 다 호환되도록 맵핑
+            const textSummary = data.recipe.map((r, idx) => {
+                if(typeof r === 'string'){
+                    return `${idx + 1}. ${r}`;
+                }
+                return `${idx + 1}. ${r.name}`;
+            }).join(', ');
 
-            // 🔥 [해결] 자동 계산된 절대 웹 주소(currentBaseURL)를 이미지 파일명 앞에 강제로 결합
-            // 엑박 현상을 완벽하게 해결합니다.
+            // 🛠️ 옛날 구조(한글 텍스트)와 새 구조(객체)를 판별하여 이미지 태그 생성
             const imagesHtml = data.recipe.map(r => {
-                return `<img src="${currentBaseURL}${r.file}.png" class="kitchen-ing-img" alt="${r.name}">`;
+                if(typeof r === 'string'){
+                    return `
+                        <div style="font-size:1em; padding:8px; font-weight:bold;">
+                            ${r}
+                        </div>
+                    `;
+                }
+                // 새 객체 구조일 때 자동 추출한 GitHub 절대경로 결합 및 엑박 에러 숨김 처리
+                return `
+                    <img 
+                        src="${currentBaseURL}${r.file}.png" 
+                        class="kitchen-ing-img" 
+                        alt="${r.name}"
+                        onerror="this.style.display='none'"
+                    >
+                `;
             }).join('');
 
             card.innerHTML = `
