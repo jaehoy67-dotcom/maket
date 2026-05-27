@@ -1,217 +1,420 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>주방용 모니터 시스템</title>
-    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <style>
-        body { 
-            background: #2C3E50; 
-            color: white; 
-            font-family: 'Gaegu', 'Nanum Gothic', sans-serif; 
-            padding: 20px;
-            margin: 0;
-            font-size: 1.4em;
-            position: relative;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
-        #status-bar {
-            padding: 12px; text-align: center; border-radius: 10px; margin-bottom: 20px;
-            font-weight: bold; font-size: 1.1em; box-shadow: inset 0 2px 5px rgba(0,0,0,0.3); transition: all 0.3s ease;
-        }
-        .status-waiting { color: #FFD43B; border: 2px solid #FFD43B; background: #34495E; }
-        .status-ready { color: #2ECC71; border: 2px solid #2ECC71; background: #1E3024; }
-        .status-connected { color: #3498DB; border: 2px solid #3498DB; background: #1A2A3A; }
 
-        h1 { text-align: center; color: #FFD43B; font-size: 2em; margin-bottom: 30px; text-shadow: 0 3px 6px rgba(0,0,0,0.2); }
-        #order-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
-        
-        .order-card { 
-            background: white; color: #333; padding: 20px; border-radius: 20px; 
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15); display: flex; flex-direction: column;
-            justify-content: space-between; border-top: 8px solid #E74C3C;
-        }
-        .order-card h2 { margin: 0 0 15px 0; font-size: 1.3em; color: #2C3E50; border-bottom: 2px dashed #EEE; padding-bottom: 8px;}
-        
-        .kitchen-recipe-container {
-            display: flex; flex-direction: column-reverse; align-items: center;
-            background: #F8F9FA; padding: 15px; border-radius: 12px; margin-bottom: 15px; gap: 2px; min-height: 100px;
-        }
-        .kitchen-ing-img { 
-            width: 140px; 
-            height: auto; 
-            object-fit: contain;
-            display: block;
-        }
-        .order-text-summary { font-size: 0.85em; color: #666; text-align: left; margin-bottom: 10px; line-height: 1.3; font-family: 'Nanum Gothic', sans-serif; }
+<meta charset="UTF-8">
 
-        .done-btn {
-            background: #2ECC71; color: white; border: none; padding: 12px; border-radius: 12px;
-            cursor: pointer; font-size: 1em; font-family: 'Gaegu', sans-serif; font-weight: bold;
-            transition: 0.2s; box-shadow: 0 4px 0 #27AE60;
-        }
-        .done-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #27AE60; }
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
 
-        .complete-screen {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.9); z-index: 9999;
-            display: flex; justify-content: center; align-items: center;
-        }
-        .complete-box {
-            background: white; color: #333; padding: 40px; border-radius: 30px;
-            text-align: center; box-shadow: 0 10px 30px rgba(255,212,59,0.3);
-            border: 6px solid #FFD43B;
-        }
-        .complete-box h1 { color: #E74C3C; font-size: 3em; margin: 0 0 10px 0; }
-        .complete-box h2 { color: #2C3E50; font-size: 1.8em; margin: 0; }
-    </style>
+<title>진영 유치원 주방 모니터</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+
+<script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+
+<style>
+
+body{
+    background:#2C3E50;
+    color:white;
+    font-family:'Gaegu','Nanum Gothic',sans-serif;
+    padding:30px;
+    margin:0;
+    font-size:1.4em;
+}
+
+h1{
+    text-align:center;
+    color:#FFD43B;
+    font-size:2em;
+    margin-bottom:10px;
+}
+
+#server-status{
+    text-align:center;
+    margin-bottom:25px;
+    font-size:0.9em;
+}
+
+#order-list{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+    gap:20px;
+    max-width:1400px;
+    margin:0 auto;
+}
+
+.order-card{
+    background:white;
+    color:#333;
+    padding:25px;
+    border-radius:25px;
+    box-shadow:0 10px 20px rgba(0,0,0,0.15);
+    border-top:10px solid #3B5998;
+    animation:popIn 0.3s ease-out;
+}
+
+@keyframes popIn{
+
+    from{
+        transform:scale(0.9);
+        opacity:0;
+    }
+
+    to{
+        transform:scale(1);
+        opacity:1;
+    }
+}
+
+.order-card h2{
+    margin:0 0 15px 0;
+    color:#3B5998;
+}
+
+.order-text-summary{
+    background:#F8F9FA;
+    padding:12px 15px;
+    border-radius:15px;
+    margin-bottom:15px;
+    font-size:0.9em;
+    line-height:1.5;
+}
+
+.kitchen-recipe-container{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    justify-content:flex-start;
+    align-items:flex-start;
+}
+
+.kitchen-ing-item{
+    background:#F8F9FA;
+    border-radius:15px;
+    padding:10px;
+    width:90px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
+
+.kitchen-ing-img{
+    width:55px;
+    height:55px;
+    object-fit:contain;
+    margin-bottom:5px;
+}
+
+.ing-name{
+    font-size:0.75em;
+    text-align:center;
+    line-height:1.2;
+    word-break:keep-all;
+}
+
+.done-btn{
+    margin-top:18px;
+    width:100%;
+    background:#2ECC71;
+    color:white;
+    border:none;
+    padding:14px;
+    border-radius:15px;
+    font-size:1em;
+    font-family:'Gaegu',sans-serif;
+    cursor:pointer;
+}
+
+.done-btn:active{
+    transform:scale(0.98);
+}
+
+</style>
+
 </head>
+
 <body>
 
-    <div id="status-bar" class="status-waiting">📡 주방 서버 통신망 구축 중...</div>
-    <h1>👨‍🍳 진영 주방 주문 접수 현황</h1>
-    <div id="order-list"></div>
+<h1>👨‍🍳 진영 유치원 주방 모니터</h1>
+
+<div id="server-status">
+🟡 서버 시작 중...
+</div>
+
+<div id="order-list"></div>
 
 <script>
-    const statusBar = document.getElementById('status-bar');
-    const orderList = document.getElementById('order-list');
-    let activeConn = null;
 
-    // 🔗 GitHub Pages 배포 환경의 현재 웹 주소 경로를 자동으로 추출 (엑박 완벽 방지)
-    const currentBaseURL = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+const orderList =
+document.getElementById('order-list');
 
-    const menus = {
-        burger: [
-            { id: 'bun_bottom', name: '아래빵', icon: '🍞' },
-            { id: 'patty', name: '패티', icon: '🍖' },
-            { id: 'lettuce', name: '양상추', icon: '🥬' },
-            { id: 'cheese', name: '치즈', icon: '🧀' },
-            { id: 'tomato', name: '토마토', icon: '🍅' },
-            { id: 'bun_top', name: '위빵', icon: '🍞' }
-        ],
-        skewer: [
-            { id: 'steak', name: '스테이크', icon: '🥩' },
-            { id: 'shrimp', name: '새우', icon: '🍤' },
-            { id: 'tomato', name: '방울토마토', icon: '🍅' },
-            { id: 'pepper', name: '피망', icon: '🫑' }
-        ],
-        drink: [
-            { id: 'cola', name: '콜라', icon: '🥤' },
-            { id: 'cider', name: '사이다', icon: '🫧' },
-            { id: 'juice', name: '주스', icon: '🧃' }
-        ]
-    };
+const statusText =
+document.getElementById('server-status');
 
-    const peer = new Peer('jinyeong-burger-kitchen-2026', {
-        debug: 1,
-        config: {
-            'iceServers': [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' }
+
+// -----------------------------
+// Peer 서버 시작
+// -----------------------------
+
+const peer = new Peer(
+    'jinyeong-burger-kitchen-2026',
+    {
+        debug:1,
+        config:{
+            iceServers:[
+                {
+                    urls:'stun:stun.l.google.com:19302'
+                },
+                {
+                    urls:'stun:stun1.l.google.com:19302'
+                },
+                {
+                    urls:'stun:stun2.l.google.com:19302'
+                }
             ]
         }
+    }
+);
+
+
+// -----------------------------
+// 서버 시작 완료
+// -----------------------------
+
+peer.on('open', (id)=>{
+
+    console.log('주방 서버 시작:', id);
+
+    statusText.innerHTML =
+        '🟢 주문 수신 대기 중';
+});
+
+
+// -----------------------------
+// 키오스크 연결
+// -----------------------------
+
+peer.on('connection', (conn)=>{
+
+    console.log('키오스크 연결됨');
+
+    conn.on('data', (data)=>{
+
+        console.log('주문 수신:', data);
+
+        addOrderCard(data, conn);
     });
 
-    peer.on('open', (id) => {
-        statusBar.innerText = "🟢 주방 오픈! 손님(키오스크)을 기다리는 중입니다...";
-        statusBar.className = "status-ready";
+    conn.on('close', ()=>{
+
+        console.log('키오스크 연결 종료');
     });
+});
 
-    peer.on('connection', (conn) => {
-        activeConn = conn;
-        statusBar.innerText = "🤝 키오스크 연결 완료! 실시간 주문 접수가 가능합니다.";
-        statusBar.className = "status-connected";
-        
-        conn.on('close', () => {
-            statusBar.innerText = "🟢 주방 오픈! 손님(키오스크)을 기다리는 중입니다...";
-            statusBar.className = "status-ready";
-            activeConn = null;
-        });
 
-        conn.on('data', (data) => {
-            const card = document.createElement('div');
-            card.className = 'order-card';
-            
-            // 🛠️ 글자/객체 구조 둘 다 호환되도록 맵핑
-            const textSummary = data.recipe.map((r, idx) => {
-                if(typeof r === 'string'){
-                    return `${idx + 1}. ${r}`;
-                }
-                return `${idx + 1}. ${r.name}`;
-            }).join(', ');
+// -----------------------------
+// 주문 카드 생성
+// -----------------------------
 
-            // 🛠️ 옛날 구조(한글 텍스트)와 새 구조(객체)를 판별하여 이미지 태그 생성
-            const imagesHtml = data.recipe.map(r => {
-                if(typeof r === 'string'){
-                    return `
-                        <div style="font-size:1em; padding:8px; font-weight:bold;">
-                            ${r}
-                        </div>
-                    `;
-                }
-                // 새 객체 구조일 때 자동 추출한 GitHub 절대경로 결합 및 엑박 에러 숨김 처리
-                return `
-                    <img 
-                        src="${currentBaseURL}${r.file}.png" 
-                        class="kitchen-ing-img" 
-                        alt="${r.name}"
-                        onerror="this.style.display='none'"
-                    >
-                `;
-            }).join('');
+function addOrderCard(data, conn){
 
-            card.innerHTML = `
-                <div>
-                    <h2>🎈 ${data.customer} 어린이 주문</h2>
-                    <div class="order-text-summary">📋 ${textSummary}</div>
-                    <div class="kitchen-recipe-container">
-                        ${imagesHtml}
-                    </div>
-                </div>
-                <button class="done-btn" onclick="finishOrder(this, '${data.customer}')">✅ 조리 완료</button>
-            `;
-            orderList.appendChild(card);
-            
-            const audio = new Audio('https://t1.daumcdn.net/cfile/tistory/99412B355A38B17305?original');
-            audio.play().catch(e => console.log("오디오 활성화"));
-        });
-    });
+    const card =
+    document.createElement('div');
 
-    function finishOrder(button, name) {
-        const card = button.closest('.order-card');
-        
-        if (activeConn && activeConn.open) {
-            activeConn.send({ status: 'cook-finished', childName: name });
+    card.className = 'order-card';
+
+
+    // -----------------------------
+    // 텍스트 요약 생성
+    // -----------------------------
+
+    const textSummary =
+    data.recipe.map((r, idx)=>{
+
+        // 예전 문자열 구조도 지원
+        if(typeof r === 'string'){
+
+            return `${idx + 1}. ${r}`;
         }
 
-        showCompleteScreen(name);
-        speakOrder(name);
-        setTimeout(() => { card.remove(); }, 500);
-    }
+        // 새 객체 구조
+        return `${idx + 1}. ${r.name}`;
 
-    function showCompleteScreen(name) {
-        const screen = document.createElement('div');
-        screen.className = 'complete-screen';
-        screen.innerHTML = `<div class="complete-box"><h1>🍔 완료! 🍟</h1><h2>🎉 ${name} 친구 주문 나왔어요~</h2></div>`;
-        document.body.appendChild(screen);
-        setTimeout(() => { screen.remove(); }, 4000);
-    }
+    }).join(', ');
 
-    function speakOrder(name) {
-        if(!window.speechSynthesis) return;
-        const utterance = new SpeechSynthesisUtterance(`${name} 친구 주문 나왔어요`);
-        utterance.lang = 'ko-KR';
-        window.speechSynthesis.speak(utterance);
-    }
 
-    peer.on('error', (err) => {
-        statusBar.innerText = "❌ 연결 지연 발생. 새로고침을 해주세요.";
-        statusBar.className = "status-waiting";
+    // -----------------------------
+    // 음식 이미지 생성
+    // -----------------------------
+
+    const imagesHtml =
+    data.recipe.map(r=>{
+
+        // 예전 문자열 구조 대응
+        if(typeof r === 'string'){
+
+            return `
+                <div class="kitchen-ing-item">
+
+                    <div style="
+                        font-size:2em;
+                        margin-bottom:5px;
+                    ">
+                    🍔
+                    </div>
+
+                    <div class="ing-name">
+                        ${r}
+                    </div>
+
+                </div>
+            `;
+        }
+
+
+        // -----------------------------
+        // GitHub RAW 이미지 주소 사용
+        // -----------------------------
+
+        const imageUrl =
+        `https://raw.githubusercontent.com/jaehoy67-dotcom/maket/main/${r.file}.png`;
+
+
+        return `
+            <div class="kitchen-ing-item">
+
+                <img
+                    src="${imageUrl}"
+                    class="kitchen-ing-img"
+                    alt="${r.name}"
+                    onerror="this.style.display='none'"
+                >
+
+                <div class="ing-name">
+                    ${r.name}
+                </div>
+
+            </div>
+        `;
+
+    }).join('');
+
+
+    // -----------------------------
+    // 카드 HTML 생성
+    // -----------------------------
+
+    card.innerHTML = `
+
+        <div>
+
+            <h2>
+                🎈 ${data.customer} 어린이 주문
+            </h2>
+
+            <div class="order-text-summary">
+                📋 ${textSummary}
+            </div>
+
+            <div class="kitchen-recipe-container">
+                ${imagesHtml}
+            </div>
+
+        </div>
+
+        <button class="done-btn">
+            ✅ 조리 완료
+        </button>
+    `;
+
+
+    // -----------------------------
+    // 완료 버튼
+    // -----------------------------
+
+    card.querySelector('.done-btn')
+    .onclick = ()=>{
+
+        try{
+
+            conn.send({
+
+                status:'cook-finished',
+
+                childName:data.customer
+            });
+
+        }catch(e){
+
+            console.log(e);
+        }
+
+        card.remove();
+    };
+
+
+    // 화면에 추가
+    orderList.prepend(card);
+
+    // 효과음
+    playOrderSound();
+}
+
+
+// -----------------------------
+// 연결 끊김 대응
+// -----------------------------
+
+peer.on('disconnected', ()=>{
+
+    console.log('Peer 연결 끊김');
+
+    statusText.innerHTML =
+        '🔴 재연결 중...';
+
+    try{
+
+        peer.reconnect();
+
+    }catch(e){
+
+        console.log(e);
+    }
+});
+
+
+// -----------------------------
+// 오류 처리
+// -----------------------------
+
+peer.on('error', (err)=>{
+
+    console.log('Peer 오류:', err);
+
+    statusText.innerHTML =
+        '🔴 서버 오류';
+});
+
+
+// -----------------------------
+// 주문 알림음
+// -----------------------------
+
+function playOrderSound(){
+
+    const audio = new Audio(
+        'https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg'
+    );
+
+    audio.play().catch(()=>{
+
+        console.log('오디오 자동재생 제한');
     });
+}
+
 </script>
+
 </body>
 </html>
