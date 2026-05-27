@@ -13,18 +13,14 @@
             --bg-soft: #F9F8F3;
             --text-dark: #333333;
         }
-
         html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
-
         body { 
             font-family: 'Gaegu', 'Nanum Gothic', sans-serif; 
             background: var(--bg-soft); text-align: center; color: var(--text-dark);
             font-size: 1.2em; user-select: none; -webkit-user-select: none; display: flex; flex-direction: column;
         }
-        
         #header-area { background: var(--primary-blue); padding: 10px; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); flex-shrink: 0; }
         #header-area h1 { margin: 0 0 8px 0; font-size: 1.5em; color: var(--point-yellow); letter-spacing: 1px; }
-        
         .tab-bar { display: flex; justify-content: center; gap: 12px; }
         .tab-btn {
             background: rgba(255,255,255,0.2); border: 2px solid transparent; color: white;
@@ -32,9 +28,7 @@
             font-family: 'Gaegu', sans-serif; font-weight: bold; transition: 0.2s;
         }
         .tab-btn.active { background: var(--point-yellow); color: var(--text-dark); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-
         #main-container { display: flex; flex: 1; position: relative; overflow: hidden; }
-        
         #menu-bar {
             width: 20%; background: #FFF; box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             padding: 10px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; z-index: 5; box-sizing: border-box;
@@ -44,42 +38,32 @@
             border-radius: 15px; cursor: pointer; font-family: 'Gaegu', sans-serif; font-weight: bold; transition: 0.15s;
         }
         .btn-ing:active { transform: scale(0.95); background: #E2E8F0; }
-
-        #cooking-area { width: 60%; position: relative; background: #FFFDF7; background-image: radial-gradient(#EAE6D9 1.5px, transparent 1.5px); background-size: 24px 24px; overflow: hidden; }
-        
         @keyframes popIn {
             0% { transform: translateX(-50%) scale(0) translateY(-250px); opacity: 0; }
             100% { transform: translateX(-50%) scale(var(--dynamic-scale, 1)) translateY(0); opacity: 1; }
         }
         .ing-img { position: absolute; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; transform-origin: bottom center; }
-        
         #skewer-stick {
             position: absolute; bottom: 40px; width: 20px; height: 68%; max-height: 460px;
             background: #D7CCC8; border-radius: 10px; border: 3px solid #8D6E63; box-shadow: 3px 5px 10px rgba(0,0,0,0.15); transition: all 0.4s ease; transform-origin: bottom center;
         }
-
         #sidebar-right { width: 20%; background: #FFF; box-shadow: -2px 0 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box; }
         #item-list-box { flex: 1; padding: 12px; overflow-y: auto; text-align: left; border-bottom: 2px dashed #E2E8F0; }
         #item-list-box h3 { margin-top: 0; color: var(--primary-blue); font-size: 1.1em; border-bottom: 2px solid var(--primary-blue); padding-bottom: 5px; }
         #item-list-content { font-size: 0.9em; line-height: 1.4; color: #555; }
-        
         .control-btns { padding: 12px; display: flex; flex-direction: column; gap: 8px; background: #FAFBFD; flex-shrink: 0; }
         .btn-side { width: 100%; padding: 10px 0; font-size: 0.95em; border-radius: 12px; border: none; cursor: pointer; font-family: 'Gaegu', sans-serif; font-weight: bold; transition: 0.2s; box-sizing: border-box; }
         .btn-undo { background: #E0E0E0; color: #333; }
         .btn-clear { background: #FAB1A0; color: #C0392B; }
         .btn-order { background: #2ECC71; color: white; font-size: 1.1em; box-shadow: 0 4px 6px rgba(46,204,113,0.3); }
         .btn-order:active { transform: scale(0.98); }
-
         .fullscreen-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; }
         #id-screen input { font-size: 1.5em; padding: 12px; text-align: center; border-radius: 15px; border: 4px solid var(--point-yellow); width: 280px; margin-top: 20px; font-family: 'Gaegu', sans-serif; }
-        
         #camera-container { position: relative; width: 280px; height: 280px; border-radius: 50%; border: 5px solid white; overflow: hidden; box-shadow: 0 0 20px rgba(255,255,255,0.5); background: #000; }
         #camera-view { width: 100%; height: 100%; transform: rotateY(180deg); object-fit: cover; }
-        
         #pay-progress-container { width: 320px; height: 15px; background: #555; border-radius: 10px; margin-top: 25px; overflow: hidden; }
         #pay-bar { width: 0%; height: 100%; background: #2ECC71; }
         .start-fill { transition: width 3.6s linear !important; width: 100% !important; }
-
         .modal-box { background: white; color: #333; padding: 25px; border-radius: 25px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
         .receipt-line { display: flex; justify-content: space-between; margin: 8px 0; font-size: 0.9em; }
     </style>
@@ -386,8 +370,9 @@
         }
     }
 
+    // 통신 데이터 간소화 (id 정보만 담긴 file 값만 전송하여 글자 깨짐 완전 차단)
     function sendFinalOrder() {
-        const recipeData = currentRecipe.map(i => ({ name: i.name, file: i.file }));
+        const recipeData = currentRecipe.map(i => ({ file: i.file }));
 
         if (conn && conn.open) {
             conn.send({ customer: customerName, recipe: recipeData });

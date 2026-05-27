@@ -73,19 +73,12 @@ h1{
     display:flex;
     flex-direction:column;
     align-items:center;
-    position: relative;
 }
 .kitchen-ing-img{
     width:55px;
     height:55px;
     object-fit:contain;
     margin-bottom:5px;
-}
-.kitchen-ing-fallback{
-    font-size: 2.2em;
-    height: 55px;
-    line-height: 55px;
-    margin-bottom: 5px;
 }
 .ing-name{
     font-size:0.75em;
@@ -120,7 +113,22 @@ h1{
 const orderList = document.getElementById('order-list');
 const statusText = document.getElementById('server-status');
 
-// Peer 서버 시작
+// 주방 매칭용 메뉴 데이터 탑재 (필수)
+const menusDict = {
+    'bun_top': { name: '위빵', icon: '🍞' },
+    'patty': { name: '패티', icon: '🍖' },
+    'lettuce': { name: '양상추', icon: '🥬' },
+    'cheese': { name: '치즈', icon: '🧀' },
+    'tomato': { name: '토마토', icon: '🍅' },
+    'bun_bottom': { name: '아래빵', icon: '🍞' },
+    'steak': { name: '스테이크', icon: '🥩' },
+    'shrimp': { name: '새우', icon: '🍤' },
+    'pepper': { name: '피망', icon: '🫑' },
+    'cola': { name: '콜라', icon: '🥤' },
+    'cider': { name: '사이다', icon: '🫧' },
+    'juice': { name: '주스', icon: '🧃' }
+};
+
 const peer = new Peer(
     'jinyeong-burger-kitchen-2026',
     {
@@ -136,86 +144,59 @@ const peer = new Peer(
 );
 
 peer.on('open', (id)=>{
-    console.log('주방 서버 시작:', id);
     statusText.innerHTML = '🟢 주문 수신 대기 중';
 });
 
 peer.on('connection', (conn)=>{
-    console.log('키오스크 연결됨');
     conn.on('data', (data)=>{
-        console.log('주문 수신:', data);
         addOrderCard(data, conn);
-    });
-    conn.on('close', ()=>{
-        console.log('키오스크 연결 종료');
     });
 });
 
-// 주문 카드 생성
 function addOrderCard(data, conn){
     const card = document.createElement('div');
     card.className = 'order-card';
 
-    // 텍스트 요약 생성 (글자 깨짐 방지: 이모지가 깨지더라도 한글 이름은 유지됨)
+    // 안전하게 복구된 ID 데이터를 바탕으로 텍스트 요약 생성
     const textSummary = data.recipe.map((r, idx)=>{
-        if(typeof r === 'string') return `${idx + 1}. ${r}`;
-        return `${idx + 1}. ${r.name}`;
+        const itemInfo = menusDict[r.file] || { name: r.file || '재료', icon: '🍔' };
+        return `${idx + 1}. ${itemInfo.icon}${itemInfo.name}`;
     }).join(', ');
 
-    // 음식 이미지 및 이모지 생성
+    // index.html과 완벽히 호환되는 로컬 이미지 노출 방식
     const imagesHtml = data.recipe.map(r=>{
-        if(typeof r === 'string'){
-            return `
-                <div class="kitchen-ing-item">
-                    <div class="kitchen-ing-fallback">🍔</div>
-                    <div class="ing-name">${r}</div>
-                </div>
-            `;
-        }
-
-        // 이름 문자열에서 이모지와 텍스트 순수 분리 (깨짐 원천 차단)
-        const nameStr = r.name || '';
-        const match = nameStr.match(/^([\uD800-\uDBFF][\uDC00-\uDFFF]|\S)\s*(.*)$/);
-        const emoji = match ? match[1] : '🍔'; 
-        const realName = match ? match[2] : nameStr;
-
-        // 만약 GitHub의 특정 폴더 안에 있다면 경로에 폴더명을 추가해 주세요 (예: main/images/${r.file}.png)
-        const imageUrl = `https://raw.githubusercontent.com/jaehoy67-dotcom/maket/main/${r.file}.png`;
+        const itemInfo = menusDict[r.file] || { name: r.file || '재료', icon: '🍔' };
+        const localImageUrl = `${r.file}.png`; // 예: bun_top.png
 
         return `
             <div class="kitchen-ing-item">
                 <img
-                    src="${imageUrl}"
+                    src="${localImageUrl}"
                     class="kitchen-ing-img"
-                    alt="${realName}"
-                    onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                    alt="${itemInfo.name}"
+                    onerror="this.style.opacity='0.2';"
                 >
-                <div class="kitchen-ing-fallback" style="display:none;">${emoji}</div>
-                <div class="ing-name">${realName}</div>
+                <div class="ing-name">${itemInfo.icon} ${itemInfo.name}</div>
             </div>
         `;
     }).join('');
 
-    // 카드 HTML 생성
     card.innerHTML = `
         <div>
-            <h2>🎈 ${data.customer} 어린이 주문</h2>
+            <h2>🎈 ${data.customer || '어린이'} 주문</h2>
             <div class="order-text-summary">📋 ${textSummary}</div>
             <div class="kitchen-recipe-container">${imagesHtml}</div>
         </div>
         <button class="done-btn">✅ 조리 완료</button>
     `;
 
-    // 완료 버튼 이벤트
     card.querySelector('.done-btn').onclick = ()=>{
         try{
             conn.send({
                 status:'cook-finished',
                 childName:data.customer
             });
-        }catch(e){
-            console.log(e);
-        }
+        }catch(e){}
         card.remove();
     };
 
@@ -224,19 +205,17 @@ function addOrderCard(data, conn){
 }
 
 peer.on('disconnected', ()=>{
-    console.log('Peer 연결 끊김');
     statusText.innerHTML = '🔴 재연결 중...';
-    try{ peer.reconnect(); }catch(e){ console.log(e); }
+    try{ peer.reconnect(); }catch(e){}
 });
 
 peer.on('error', (err)=>{
-    console.log('Peer 오류:', err);
     statusText.innerHTML = '🔴 서버 오류';
 });
 
 function playOrderSound(){
     const audio = new Audio('https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg');
-    audio.play().catch(()=>{ console.log('오디오 자동재생 제한'); });
+    audio.play().catch(()=>{});
 }
 </script>
 </body>
