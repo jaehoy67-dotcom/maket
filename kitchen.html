@@ -37,7 +37,7 @@
         }
         #order-list {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 20px;
             max-width: 1200px;
             margin: 0 auto;
@@ -46,29 +46,54 @@
             background: white; 
             color: #333; 
             padding: 20px; 
-            border-radius: 15px; 
+            border-radius: 20px; 
             box-shadow: 0 6px 12px rgba(0,0,0,0.15);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             border-top: 8px solid #E74C3C;
         }
-        .order-card h2 { margin: 0 0 15px 0; font-size: 1.3em; color: #2C3E50; }
-        .recipe-list { background: #F8F9FA; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
-        .step { margin: 5px 0; font-size: 0.95em; }
+        .order-card h2 { margin: 0 0 15px 0; font-size: 1.3em; color: #2C3E50; border-bottom: 2px dashed #EEE; padding-bottom: 8px;}
+        
+        /* 🍔 주방 내부 음식 이미지 차곡차곡 리스트 스타일 */
+        .kitchen-recipe-container {
+            display: flex;
+            flex-direction: column-reverse; /* 아래서부터 위로 쌓이도록 연출 */
+            align-items: center;
+            background: #F8F9FA;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            gap: 2px;
+            min-height: 100px;
+        }
+        .kitchen-ing-img {
+            width: 120px;
+            height: auto;
+            object-fit: contain;
+        }
+        .order-text-summary {
+            font-size: 0.85em;
+            color: #666;
+            text-align: left;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+
         .done-btn {
             background: #2ECC71;
             color: white;
             border: none;
             padding: 12px;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
             font-size: 1em;
             font-family: 'Gaegu', sans-serif;
             font-weight: bold;
             transition: 0.2s;
+            box-shadow: 0 4px 0 #27AE60;
         }
-        .done-btn:hover { background: #27AE60; transform: scale(1.02); }
+        .done-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #27AE60; }
     </style>
 </head>
 <body>
@@ -81,7 +106,6 @@
     const statusBar = document.getElementById('status-bar');
     const orderList = document.getElementById('order-list');
 
-    // 🛠 구글 공식 다이렉트 브릿지 통신망(STUN)으로 연동 방식 완전 전향
     const peer = new Peer('jinyeong-burger-kitchen-2026', {
         debug: 1,
         config: {
@@ -110,11 +134,21 @@
         conn.on('data', (data) => {
             const card = document.createElement('div');
             card.className = 'order-card';
+            
+            // 텍스트 요약본 생성
+            const textSummary = data.recipe.map((r, idx) => `${idx+1}.${r.name}`).join(', ');
+
+            // 🛠 넘겨받은 이미지 코드(file)를 분석해 주방 모니터에도 동일한 이미지 엘리먼트 동적 생성
+            const imagesHtml = data.recipe.map(r => {
+                return `<img src="${r.file}.png" class="kitchen-ing-img" alt="${r.name}">`;
+            }).join('');
+
             card.innerHTML = `
                 <div>
                     <h2>🎈 ${data.customer} 어린이 주문</h2>
-                    <div class="recipe-list">
-                        ${data.recipe.map(r => `<div class="step">🔹 ${r}</div>`).join('')}
+                    <div class="order-text-summary">📋 ${textSummary}</div>
+                    <div class="kitchen-recipe-container">
+                        ${imagesHtml}
                     </div>
                 </div>
                 <button class="done-btn" onclick="this.parentElement.remove()">✅ 조리 완료</button>
