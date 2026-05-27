@@ -1,175 +1,148 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<title>주방용 모니터 시스템</title>
+    <meta charset="UTF-8">
+    <title>주방용 모니터 시스템</title>
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        body { 
+            background: #2C3E50; 
+            color: white; 
+            font-family: 'Gaegu', 'Nanum Gothic', sans-serif; 
+            padding: 20px;
+            margin: 0;
+            font-size: 1.4em;
+        }
+        /* 💡 대기 상태 표시 바 스타일 */
+        #status-bar {
+            background: #34495E;
+            padding: 12px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+        .status-waiting { color: #FFD43B; border: 2px solid #FFD43B; }
+        .status-ready { color: #2ECC71; border: 2px solid #2ECC71; background: #1E3024 !important; }
+        .status-connected { color: #3498DB; border: 2px solid #3498DB; background: #1A2A3A !important; }
 
-<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
-<style>
-body{
-    background:#2C3E50;
-    color:white;
-    font-family:'Gaegu', sans-serif;
-    padding:30px;
-    margin:0;
-}
-
-h1{
-    text-align:center;
-    color:#FFD43B;
-    font-size:2em;
-}
-
-#status{
-    text-align:center;
-    margin-bottom:20px;
-    font-size:1.1em;
-}
-
-#order-list{
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
-    gap:20px;
-}
-
-.order-card{
-    background:white;
-    color:#333;
-    border-radius:25px;
-    padding:20px;
-    border-top:10px solid #3B5998;
-    box-shadow:0 10px 20px rgba(0,0,0,0.2);
-}
-
-.order-card h2{
-    margin-top:0;
-    color:#3B5998;
-}
-
-.step{
-    background:#F5F5F5;
-    padding:8px 12px;
-    border-radius:10px;
-    margin-bottom:8px;
-    font-weight:bold;
-}
-
-.done-btn{
-    width:100%;
-    margin-top:15px;
-    padding:12px;
-    border:none;
-    border-radius:15px;
-    background:#2ECC71;
-    color:white;
-    font-size:1em;
-    font-family:'Gaegu', sans-serif;
-    cursor:pointer;
-}
-</style>
+        h1 {
+            text-align: center;
+            color: #FFD43B;
+            font-size: 2em;
+            margin-bottom: 30px;
+            text-shadow: 0 3px 6px rgba(0,0,0,0.2);
+        }
+        #order-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .order-card { 
+            background: white; 
+            color: #333; 
+            padding: 20px; 
+            border-radius: 15px; 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-top: 8px solid #E74C3C;
+        }
+        .order-card h2 { margin: 0 0 15px 0; font-size: 1.3em; color: #2C3E50; }
+        .recipe-list { background: #F8F9FA; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
+        .step { margin: 5px 0; font-size: 0.95em; }
+        .done-btn {
+            background: #2ECC71;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-family: 'Gaegu', sans-serif;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .done-btn:hover { background: #27AE60; transform: scale(1.02); }
+    </style>
 </head>
-
 <body>
 
-<h1>👨‍🍳 진영 주방 주문 현황</h1>
-<div id="status">🟡 서버 연결 중...</div>
-<div id="order-list"></div>
+    <div id="status-bar" class="status-waiting">📡 주방 연결 준비 중입니다...</div>
+
+    <h1>👨‍🍳 진영 주방 주문 접수 현황</h1>
+    <div id="order-list"></div>
 
 <script>
+    const statusBar = document.getElementById('status-bar');
+    const orderList = document.getElementById('order-list');
 
-const orderList = document.getElementById('order-list');
-const statusText = document.getElementById('status');
-
-let peer;
-
-function startKitchenServer(){
-
-    peer = new Peer('jinyeong-burger-kitchen-2026', {
-        debug: 2
+    // 🛠 글로벌 중계 서버 옵션을 명시하여 공용 무선 네트워크 통신망 구축
+    const peer = new Peer('jinyeong-burger-kitchen-2026', {
+        host: '0.peerjs.com',
+        port: 443,
+        secure: true,
+        config: {
+            'iceServers': [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        }
     });
 
-    peer.on('open', () => {
-        console.log('주방 서버 실행 완료');
-        statusText.innerText = '🟢 주문 수신 대기 중';
+    // 1. 주방 서버가 정상적으로 클라우드에 등록되었을 때 (대기 상태 완료)
+    peer.on('open', (id) => {
+        console.log("주방 서버 수신 대기 시작! ID:", id);
+        statusBar.innerText = "🟢 주방 오픈! 손님(키오스크)을 기다리는 중입니다...";
+        statusBar.className = "status-ready";
     });
 
+    // 2. 키오스크 기기가 접속했을 때
     peer.on('connection', (conn) => {
-
-        console.log('키오스크 연결됨');
-
-        conn.on('data', (data) => {
-
-            console.log('주문 도착:', data);
-
-            addOrderCard(data);
-
-            playSound();
-        });
-
+        console.log("손님용 키오스크 기기와 무선 연결망 확립!");
+        statusBar.innerText = "🤝 키오스크 연결 완료! 실시간 주문 접수가 가능합니다.";
+        statusBar.className = "status-connected";
+        
+        // 키오스크 화면이 꺼지거나 새로고침되어 끊겼을 때 대기 상태로 복복구
         conn.on('close', () => {
-            console.log('키오스크 연결 종료');
+            statusBar.innerText = "🟢 주방 오픈! 손님(키오스크)을 기다리는 중입니다...";
+            statusBar.className = "status-ready";
         });
-    });
 
-    peer.on('disconnected', () => {
-
-        statusText.innerText = '🔴 연결 끊김 → 재연결 시도 중';
-
-        peer.reconnect();
+        // 주문 데이터가 들어왔을 때 처리
+        conn.on('data', (data) => {
+            console.log("주문 데이터 정상 수신 완료:", data);
+            const card = document.createElement('div');
+            card.className = 'order-card';
+            card.innerHTML = `
+                <div>
+                    <h2>🎈 ${data.customer} 어린이 주문</h2>
+                    <div class="recipe-list">
+                        ${data.recipe.map((r, i) => `<div class="step">🔹 ${r}</div>`).join('')}
+                    </div>
+                </div>
+                <button class="done-btn" onclick="this.parentElement.remove()">✅ 조리 완료</button>
+            `;
+            orderList.appendChild(card);
+            
+            // 알림음 재생
+            const audio = new Audio('https://t1.daumcdn.net/cfile/tistory/99412B355A38B17305?original');
+            audio.play().catch(e => console.log("첫 주문 시 오디오 차단 해제를 위해 화면을 한 번 클릭해 주세요."));
+        });
     });
 
     peer.on('error', (err) => {
-
-        console.log(err);
-
-        statusText.innerText = '🔴 서버 오류 발생';
-
-        setTimeout(() => {
-            peer.destroy();
-            startKitchenServer();
-        }, 3000);
+        console.error("주방 서버 피어 에러 발생:", err);
+        statusBar.innerText = "❌ 연결 오류가 발생했습니다. 새로고침을 해주세요.";
+        statusBar.className = "status-waiting";
     });
-}
-
-function addOrderCard(data){
-
-    const card = document.createElement('div');
-
-    card.className = 'order-card';
-
-    card.innerHTML = `
-        <h2>🎈 ${data.customer} 어린이</h2>
-
-        ${data.recipe.map(r => `
-            <div class="step">${r}</div>
-        `).join('')}
-
-        <button class="done-btn">
-            ✅ 조리 완료
-        </button>
-    `;
-
-    card.querySelector('.done-btn').onclick = () => {
-        card.remove();
-    };
-
-    orderList.prepend(card);
-}
-
-function playSound(){
-
-    const audio = new Audio(
-        'https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg'
-    );
-
-    audio.play().catch(() => {});
-}
-
-startKitchenServer();
-
 </script>
-
 </body>
 </html>
