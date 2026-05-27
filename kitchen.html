@@ -80,6 +80,10 @@
     const orderList = document.getElementById('order-list');
     let activeConn = null;
 
+    // 🔥 [해결] 깃허브 배포 환경의 현재 웹 주소 기본 경로를 자동으로 추출하는 코드
+    // 예: https://아이디.github.io/레포지토리명/ 을 자동으로 계산해 냄
+    const currentBaseURL = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+
     const menus = {
         burger: [
             { id: 'bun_bottom', name: '아래빵', icon: '🍞' },
@@ -135,9 +139,10 @@
             
             const textSummary = data.recipe.map((r, idx) => `${idx+1}.${r.name}`).join(', ');
 
-            // 🛠️ 주방과 인덱스가 같은 주소에 있으므로 영문 파일명(r.file)을 상대 경로로 직접 호출합니다!
+            // 🔥 [해결] 자동 계산된 절대 웹 주소(currentBaseURL)를 이미지 파일명 앞에 강제로 결합
+            // 엑박 현상을 완벽하게 해결합니다.
             const imagesHtml = data.recipe.map(r => {
-                return `<img src="${r.file}.png" class="kitchen-ing-img" alt="${r.name}">`;
+                return `<img src="${currentBaseURL}${r.file}.png" class="kitchen-ing-img" alt="${r.name}">`;
             }).join('');
 
             card.innerHTML = `
